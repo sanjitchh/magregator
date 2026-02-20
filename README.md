@@ -153,6 +153,7 @@ This repo includes Foundry scripts for Monad adapter deployment:
 - `script/deploy/DeployMonadUniswapV2Adapter.s.sol`
 - `script/deploy/DeployMonadUniswapV3Adapter.s.sol`
 - `script/deploy/DeployMonadUniswapV4Adapter.s.sol`
+- `script/deploy/DeployMonadKyberElasticAdapter.s.sol`
 - `script/deploy/DeployMonadWNativeAdapter.s.sol`
 
 Configure Monad values in `.env` first:
@@ -164,11 +165,21 @@ Configure Monad values in `.env` first:
 - `MONAD_UNIV4_POOL_MANAGER`
 - `MONAD_UNIV4_STATIC_QUOTER`
 - `MONAD_WRAPPED_NATIVE`
+- `MONAD_KYBER_FACTORY`
+- `MONAD_KYBER_QUOTER`
+- `MONAD_KYBER_POOL_COUNT`
+- `MONAD_KYBER_POOL_0` ... `MONAD_KYBER_POOL_N`
 
 Example deployment command:
 
 ```bash
 forge script script/deploy/DeployMonadUniswapV4Adapter.s.sol:DeployMonadUniswapV4Adapter --account deployer --rpc-url monad --broadcast
+```
+
+Kyber Elastic adapter deployment example:
+
+```bash
+forge script script/deploy/DeployMonadKyberElasticAdapter.s.sol:DeployMonadKyberElasticAdapter --account deployer --rpc-url monad --broadcast
 ```
 
 
