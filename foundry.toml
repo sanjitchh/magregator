@@ -11,10 +11,10 @@ gas_reports = ["*"]
 
 remappings = [
     "@openzeppelin/contracts/=dependencies/@openzeppelin-contracts-4.9.6/",
-    "forge-std/=dependencies/forge-std-1.9.7/src/",
+    "@solady/=dependencies/solady/src",
     "@uniswap/v4-core/=dependencies/v4-core/",
     "@uniswap/v4-periphery/=dependencies/v4-periphery/",
-    "@solady/=dependencies/solady/src"
+    "forge-std/=dependencies/forge-std-1.9.7/src/",
 ]
 
 [rpc_endpoints]

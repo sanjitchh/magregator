@@ -13,7 +13,7 @@ contract DeploymentFactory {
 
         if (chainId == 43114) {
             return INetworkDeployments(address(new AvalancheDeployments()));
-        } else if (chainId == 10143) {
+        } else if (chainId == 143 || chainId == 10143) {
             return INetworkDeployments(address(new MonadDeployments()));
         } else {
             revert UnsupportedNetwork(chainId);
@@ -23,7 +23,7 @@ contract DeploymentFactory {
     function getDeploymentsByChainId(uint256 chainId) public returns (INetworkDeployments) {
         if (chainId == 43114) {
             return INetworkDeployments(address(new AvalancheDeployments()));
-        } else if (chainId == 10143) {
+        } else if (chainId == 143 || chainId == 10143) {
             return INetworkDeployments(address(new MonadDeployments()));
         } else {
             revert UnsupportedNetwork(chainId);
@@ -36,7 +36,7 @@ contract DeploymentFactory {
 
         chainIds[0] = 43114;
         names[0] = "Avalanche";
-        chainIds[1] = 10143;
+        chainIds[1] = 143;
         names[1] = "Monad";
     }
 }

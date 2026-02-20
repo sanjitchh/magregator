@@ -5,10 +5,11 @@ import "./utils/INetworkDeployments.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 
 contract MonadDeployments is INetworkDeployments {
-    uint256 constant CHAIN_ID = 10143;
+    uint256 constant CHAIN_ID = 143;
 
     // Fill these addresses after deploying the router and adapters on Monad.
-    address constant ROUTER = address(0);
+    address constant ROUTER = 0xC1AE182eEd95cb9215B140db4aFD79c9E86f51C7;
+    address constant UNISWAP_V3_ADAPTER = 0x7694078AeC18DaE9238dAb946945BC2fE20d7322;
     address constant UNISWAP_V4_ADAPTER = address(0);
 
     function getChainId() public pure override returns (uint256) {
@@ -24,7 +25,9 @@ contract MonadDeployments is INetworkDeployments {
     }
 
     function getWhitelistedAdapters() public pure override returns (address[] memory) {
-        return new address[](0);
+        address[] memory adapters = new address[](1);
+        adapters[0] = UNISWAP_V3_ADAPTER;
+        return adapters;
     }
 
     function getWhitelistedHopTokens() public pure override returns (address[] memory) {

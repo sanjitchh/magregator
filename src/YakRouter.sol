@@ -36,7 +36,7 @@ contract YakRouter is Maintainable, Recoverable, IYakRouter {
 
     address public immutable WNATIVE;
     address public constant NATIVE = address(0);
-    string public constant NAME = "YakRouter";
+    string public constant NAME = "MoksaRouter";
     uint256 public constant FEE_DENOMINATOR = 1e4;
     uint256 public MIN_FEE = 0;
     address public FEE_CLAIMER;

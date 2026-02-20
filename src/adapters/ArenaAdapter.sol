@@ -34,6 +34,7 @@ import {BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 import {TransientStateLibrary} from "@uniswap/v4-core/src/libraries/TransientStateLibrary.sol";
+import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 
 interface IArenaFeeHelperMinimal {
     function getTotalFeePpm(PoolId poolId) external view returns (uint256);
@@ -189,7 +190,7 @@ contract ArenaAdapter is YakAdapter, IUnlockCallback {
 
         BalanceDelta delta = poolManager.swap(
             poolKey,
-            IPoolManager.SwapParams({
+            SwapParams({
                 zeroForOne: zeroForOne,
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
@@ -214,4 +215,3 @@ contract ArenaAdapter is YakAdapter, IUnlockCallback {
         return "";
     }
 }
-
