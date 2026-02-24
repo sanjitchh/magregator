@@ -152,6 +152,7 @@ This repo includes Foundry scripts for Monad adapter deployment:
 
 - `script/deploy/DeployMonadUniswapV2Adapter.s.sol`
 - `script/deploy/DeployMonadUniswapV3Adapter.s.sol`
+- `script/deploy/DeployMonadPancakeV3Adapter.s.sol`
 - `script/deploy/DeployMonadUniswapV4Adapter.s.sol`
 - `script/deploy/DeployMonadKyberElasticAdapter.s.sol`
 - `script/deploy/DeployMonadWNativeAdapter.s.sol`
@@ -162,6 +163,10 @@ Configure Monad values in `.env` first:
 - `MONAD_UNIV2_FACTORY`
 - `MONAD_UNIV3_FACTORY`
 - `MONAD_UNIV3_QUOTER`
+- `MONAD_PANCAKEV3_FACTORY`
+- `MONAD_PANCAKEV3_QUOTER`
+- `MONAD_PANCAKEV3_QUOTER_GAS_LIMIT`
+- `MONAD_PANCAKEV3_GAS_ESTIMATE`
 - `MONAD_UNIV4_POOL_MANAGER`
 - `MONAD_UNIV4_STATIC_QUOTER`
 - `MONAD_WRAPPED_NATIVE`
@@ -180,6 +185,12 @@ Kyber Elastic adapter deployment example:
 
 ```bash
 forge script script/deploy/DeployMonadKyberElasticAdapter.s.sol:DeployMonadKyberElasticAdapter --account deployer --rpc-url monad --broadcast
+```
+
+Pancake V3 adapter deployment example:
+
+```bash
+forge script script/deploy/DeployMonadPancakeV3Adapter.s.sol:DeployMonadPancakeV3Adapter --account deployer --rpc-url monad --broadcast
 ```
 
 

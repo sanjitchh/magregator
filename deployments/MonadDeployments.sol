@@ -10,6 +10,7 @@ contract MonadDeployments is INetworkDeployments {
     // Fill these addresses after deploying the router and adapters on Monad.
     address constant ROUTER = 0xC1AE182eEd95cb9215B140db4aFD79c9E86f51C7;
     address constant UNISWAP_V3_ADAPTER = 0x7694078AeC18DaE9238dAb946945BC2fE20d7322;
+    address constant PANCAKE_V3_ADAPTER = 0xB5162cAf7cE4f228Aa5A8cb4B504229EC2fe44fa;
     address constant KYBER_ELASTIC_ADAPTER = address(0);
     address constant UNISWAP_V4_ADAPTER = address(0);
 
@@ -28,6 +29,7 @@ contract MonadDeployments is INetworkDeployments {
     function getWhitelistedAdapters() public pure override returns (address[] memory) {
         uint256 count;
         if (UNISWAP_V3_ADAPTER != address(0)) count++;
+        if (PANCAKE_V3_ADAPTER != address(0)) count++;
         if (KYBER_ELASTIC_ADAPTER != address(0)) count++;
 
         address[] memory adapters = new address[](count);
@@ -35,6 +37,10 @@ contract MonadDeployments is INetworkDeployments {
 
         if (UNISWAP_V3_ADAPTER != address(0)) {
             adapters[i] = UNISWAP_V3_ADAPTER;
+            i++;
+        }
+        if (PANCAKE_V3_ADAPTER != address(0)) {
+            adapters[i] = PANCAKE_V3_ADAPTER;
             i++;
         }
         if (KYBER_ELASTIC_ADAPTER != address(0)) {
