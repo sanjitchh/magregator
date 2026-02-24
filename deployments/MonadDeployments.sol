@@ -11,6 +11,7 @@ contract MonadDeployments is INetworkDeployments {
     address constant ROUTER = 0xC1AE182eEd95cb9215B140db4aFD79c9E86f51C7;
     address constant UNISWAP_V3_ADAPTER = 0x7694078AeC18DaE9238dAb946945BC2fE20d7322;
     address constant PANCAKE_V3_ADAPTER = 0xB5162cAf7cE4f228Aa5A8cb4B504229EC2fe44fa;
+    address constant KURU_ADAPTER = 0xeD91CA78a2E1c759022d42D4C97ecA472A70014b;
     address constant KYBER_ELASTIC_ADAPTER = address(0);
     address constant UNISWAP_V4_ADAPTER = address(0);
 
@@ -30,6 +31,7 @@ contract MonadDeployments is INetworkDeployments {
         uint256 count;
         if (UNISWAP_V3_ADAPTER != address(0)) count++;
         if (PANCAKE_V3_ADAPTER != address(0)) count++;
+        if (KURU_ADAPTER != address(0)) count++;
         if (KYBER_ELASTIC_ADAPTER != address(0)) count++;
 
         address[] memory adapters = new address[](count);
@@ -41,6 +43,10 @@ contract MonadDeployments is INetworkDeployments {
         }
         if (PANCAKE_V3_ADAPTER != address(0)) {
             adapters[i] = PANCAKE_V3_ADAPTER;
+            i++;
+        }
+        if (KURU_ADAPTER != address(0)) {
+            adapters[i] = KURU_ADAPTER;
             i++;
         }
         if (KYBER_ELASTIC_ADAPTER != address(0)) {

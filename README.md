@@ -153,6 +153,7 @@ This repo includes Foundry scripts for Monad adapter deployment:
 - `script/deploy/DeployMonadUniswapV2Adapter.s.sol`
 - `script/deploy/DeployMonadUniswapV3Adapter.s.sol`
 - `script/deploy/DeployMonadPancakeV3Adapter.s.sol`
+- `script/deploy/DeployMonadKuruAdapter.s.sol`
 - `script/deploy/DeployMonadUniswapV4Adapter.s.sol`
 - `script/deploy/DeployMonadKyberElasticAdapter.s.sol`
 - `script/deploy/DeployMonadWNativeAdapter.s.sol`
@@ -167,6 +168,11 @@ Configure Monad values in `.env` first:
 - `MONAD_PANCAKEV3_QUOTER`
 - `MONAD_PANCAKEV3_QUOTER_GAS_LIMIT`
 - `MONAD_PANCAKEV3_GAS_ESTIMATE`
+- `MONAD_AUSD`
+- `MONAD_USDC`
+- `MONAD_KURU_MON_AUSD_MARKET`
+- `MONAD_KURU_MON_USDC_MARKET`
+- `MONAD_KURU_GAS_ESTIMATE`
 - `MONAD_UNIV4_POOL_MANAGER`
 - `MONAD_UNIV4_STATIC_QUOTER`
 - `MONAD_WRAPPED_NATIVE`
@@ -191,6 +197,12 @@ Pancake V3 adapter deployment example:
 
 ```bash
 forge script script/deploy/DeployMonadPancakeV3Adapter.s.sol:DeployMonadPancakeV3Adapter --account deployer --rpc-url monad --broadcast
+```
+
+Kuru adapter deployment example:
+
+```bash
+forge script script/deploy/DeployMonadKuruAdapter.s.sol:DeployMonadKuruAdapter --account deployer --rpc-url monad --broadcast
 ```
 
 
