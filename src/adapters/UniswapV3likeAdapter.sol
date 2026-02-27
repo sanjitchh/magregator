@@ -20,7 +20,7 @@ pragma solidity ^0.8.0;
 
 import "../interface/IERC20.sol";
 import "../lib/SafeERC20.sol";
-import "../YakAdapter.sol";
+import "../MoksaAdapter.sol";
 
 struct QParams {
     address tokenIn;
@@ -58,7 +58,7 @@ interface IUniV3Quoter {
     ) external view returns (int256, int256);
 }
 
-abstract contract UniswapV3likeAdapter is YakAdapter {
+abstract contract UniswapV3likeAdapter is MoksaAdapter {
     using SafeERC20 for IERC20;
 
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
@@ -71,7 +71,7 @@ abstract contract UniswapV3likeAdapter is YakAdapter {
         uint256 _swapGasEstimate,
         address _quoter,
         uint256 _quoterGasLimit
-    ) YakAdapter(_name, _swapGasEstimate) {
+    ) MoksaAdapter(_name, _swapGasEstimate) {
         setQuoterGasLimit(_quoterGasLimit);
         setQuoter(_quoter);
     }

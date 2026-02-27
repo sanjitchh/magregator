@@ -5,9 +5,9 @@ import "../interface/IERC20.sol";
 import "../interface/IWETH.sol";
 import "../interface/IKuruOrderBook.sol";
 import "../lib/SafeERC20.sol";
-import "../YakAdapter.sol";
+import "../MoksaAdapter.sol";
 
-contract KuruAdapter is YakAdapter {
+contract KuruAdapter is MoksaAdapter {
     using SafeERC20 for IERC20;
 
     uint256 private constant BPS = 10_000;
@@ -34,7 +34,7 @@ contract KuruAdapter is YakAdapter {
         address _usdc,
         address _monAusdMarket,
         address _monUsdcMarket
-    ) YakAdapter(_name, _swapGasEstimate) {
+    ) MoksaAdapter(_name, _swapGasEstimate) {
         wmon = _wmon;
         ausd = _ausd;
         usdc = _usdc;

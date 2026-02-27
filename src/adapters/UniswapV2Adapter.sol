@@ -22,9 +22,9 @@ import "../interface/IUniswapFactory.sol";
 import "../interface/IUniswapPair.sol";
 import "../interface/IERC20.sol";
 import "../lib/SafeERC20.sol";
-import "../YakAdapter.sol";
+import "../MoksaAdapter.sol";
 
-contract UniswapV2Adapter is YakAdapter {
+contract UniswapV2Adapter is MoksaAdapter {
     using SafeERC20 for IERC20;
 
     uint256 internal constant FEE_DENOMINATOR = 1e3;
@@ -36,7 +36,7 @@ contract UniswapV2Adapter is YakAdapter {
         address _factory,
         uint256 _fee,
         uint256 _swapGasEstimate
-    ) YakAdapter(_name, _swapGasEstimate) {
+    ) MoksaAdapter(_name, _swapGasEstimate) {
         feeCompliment = FEE_DENOMINATOR - _fee;
         factory = _factory;
     }

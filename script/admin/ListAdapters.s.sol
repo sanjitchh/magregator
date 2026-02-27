@@ -5,14 +5,14 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {DeploymentFactory} from "../../deployments/utils/DeploymentFactory.sol";
 import {INetworkDeployments} from "../../deployments/utils/INetworkDeployments.sol";
-import {YakRouter} from "../../src/YakRouter.sol";
+import {MoksaRouter} from "../../src/MoksaRouter.sol";
 import {IAdapter} from "../../src/interface/IAdapter.sol";
 
 /**
  * @title ListAdapters
- * @notice Admin script to list all adapters currently registered in the YakRouter
+ * @notice Admin script to list all adapters currently registered in the MoksaRouter
  *
- * @dev This script queries the YakRouter contract to display all currently registered
+ * @dev This script queries the MoksaRouter contract to display all currently registered
  *      adapters with their addresses and names. It provides a quick overview of the
  *      router's current configuration.
  *
@@ -22,10 +22,8 @@ import {IAdapter} from "../../src/interface/IAdapter.sol";
  * List adapters on any supported network:
  * forge script script/admin/ListAdapters.s.sol --rpc-url <network>
  *
- * Examples:
- * - forge script script/admin/ListAdapters.s.sol --rpc-url avalanche
- * - forge script script/admin/ListAdapters.s.sol --rpc-url arbitrum
- * - forge script script/admin/ListAdapters.s.sol --rpc-url optimism
+ * Example:
+ * - forge script script/admin/ListAdapters.s.sol --rpc-url monad
  *
  */
 contract ListAdapters is Script {
@@ -37,7 +35,7 @@ contract ListAdapters is Script {
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Chain ID:", deployments.getChainId());
-        console.log("YakRouter:", deployments.getRouter());
+        console.log("MoksaRouter:", deployments.getRouter());
         console.log("");
 
         // Verify router is deployed
@@ -46,8 +44,8 @@ contract ListAdapters is Script {
             return;
         }
 
-        YakRouter yakRouter = YakRouter(payable(deployments.getRouter()));
-        uint256 adapterCount = yakRouter.adaptersCount();
+        MoksaRouter moksaRouter = MoksaRouter(payable(deployments.getRouter()));
+        uint256 adapterCount = moksaRouter.adaptersCount();
         console.log("Total adapters:", adapterCount);
         console.log("");
 
@@ -58,7 +56,7 @@ contract ListAdapters is Script {
 
         // List all adapters
         for (uint256 i = 0; i < adapterCount; i++) {
-            address adapterAddr = yakRouter.ADAPTERS(i);
+            address adapterAddr = moksaRouter.ADAPTERS(i);
 
             // Try to get adapter name, but handle failures gracefully
             string memory adapterName = IAdapter(adapterAddr).name();

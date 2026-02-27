@@ -44,13 +44,13 @@ struct Trade {
     address[] adapters;
 }
 
-interface IYakRouter {
+interface IMoksaRouter {
 
     event UpdatedTrustedTokens(address[] _newTrustedTokens);
     event UpdatedAdapters(address[] _newAdapters);
     event UpdatedMinFee(uint256 _oldMinFee, uint256 _newMinFee);
     event UpdatedFeeClaimer(address _oldFeeClaimer, address _newFeeClaimer);
-    event YakSwap(address indexed _tokenIn, address indexed _tokenOut, uint256 _amountIn, uint256 _amountOut);
+    event MoksaSwap(address indexed _tokenIn, address indexed _tokenOut, uint256 _amountIn, uint256 _amountOut);
 
     // admin
     function setTrustedTokens(address[] memory _trustedTokens) external;
@@ -107,13 +107,13 @@ interface IYakRouter {
         uint256 _fee
     ) external;
 
-    function swapNoSplitFromAVAX(
+    function swapNoSplitFromNative(
         Trade calldata _trade,
         address _to,
         uint256 _fee
     ) external payable;
 
-    function swapNoSplitToAVAX(
+    function swapNoSplitToNative(
         Trade calldata _trade,
         address _to,
         uint256 _fee
@@ -129,7 +129,7 @@ interface IYakRouter {
         bytes32 _s
     ) external;
 
-    function swapNoSplitToAVAXWithPermit(
+    function swapNoSplitToNativeWithPermit(
         Trade calldata _trade,
         address _to,
         uint256 _fee,

@@ -18,11 +18,8 @@ remappings = [
 ]
 
 [rpc_endpoints]
-avalanche = "${AVALANCHE_RPC}"
-arbitrum = "${ARBITRUM_RPC}"
-optimism = "${OPTIMISM_RPC}"
-mantle = "${MANTLE_RPC}"
 monad = "${MONAD_RPC}"
+ethereum = "${ETHEREUM_RPC}"
 
 [dependencies]
 forge-std = "1.9.7"

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../../deployments/utils/DeploymentFactory.sol";
-import {YakRouter} from "../../src/YakRouter.sol";
+import {MoksaRouter} from "../../src/MoksaRouter.sol";
 
 // Simple interface for getting token symbols
 interface IERC20Symbol {
@@ -15,15 +15,15 @@ interface IERC20Symbol {
  * @title UpdateHopTokens
  * @notice Admin script to sync router hop tokens (trusted tokens) with whitelisted hop tokens from deployments config
  *
- * @dev This script compares the current on-chain trusted tokens in the YakRouter with the
- *      whitelisted hop tokens defined in the network deployment config (e.g., AvalancheDeployments.sol).
+ * @dev This script compares the current on-chain trusted tokens in the MoksaRouter with the
+ *      whitelisted hop tokens defined in the network deployment config.
  *      If they don't match, it shows the differences and can update the router.
  *
  * USAGE:
  * ======
  *
  * 1. CHECK MODE (dry-run):
- *    forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url avalanche
+ *    forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url monad
  *
  *    This will:
  *    - Show current on-chain trusted tokens
@@ -32,7 +32,7 @@ interface IERC20Symbol {
  *    - NOT make any changes
  *
  * 2. UPDATE MODE (execute):
- *    forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url avalanche --broadcast
+ *    forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url monad --broadcast
  *
  *    This will:
  *    - Show the same information as check mode
@@ -57,7 +57,7 @@ contract UpdateHopTokens is Script {
 
         // Get deployments for current network
         INetworkDeployments deployments = factory.getDeployments();
-        YakRouter router = YakRouter(payable(deployments.getRouter()));
+        MoksaRouter router = MoksaRouter(payable(deployments.getRouter()));
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", deployments.getRouter());

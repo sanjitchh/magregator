@@ -22,10 +22,10 @@ import "./interface/IERC20.sol";
 import "./lib/SafeERC20.sol";
 import "./lib/Maintainable.sol";
 
-abstract contract YakAdapter is Maintainable {
+abstract contract MoksaAdapter is Maintainable {
     using SafeERC20 for IERC20;
 
-    event YakAdapterSwap(address indexed _tokenFrom, address indexed _tokenTo, uint256 _amountIn, uint256 _amountOut);
+    event MoksaAdapterSwap(address indexed _tokenFrom, address indexed _tokenTo, uint256 _amountIn, uint256 _amountOut);
     event UpdatedGasEstimate(address indexed _adapter, uint256 _newEstimate);
     event Recovered(address indexed _asset, uint256 amount);
 
@@ -54,13 +54,13 @@ abstract contract YakAdapter is Maintainable {
     }
 
     function recoverERC20(address _tokenAddress, uint256 _tokenAmount) external onlyMaintainer {
-        require(_tokenAmount > 0, "YakAdapter: Nothing to recover");
+        require(_tokenAmount > 0, "MoksaAdapter: Nothing to recover");
         IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
         emit Recovered(_tokenAddress, _tokenAmount);
     }
 
-    function recoverAVAX(uint256 _amount) external onlyMaintainer {
-        require(_amount > 0, "YakAdapter: Nothing to recover");
+    function recoverNative(uint256 _amount) external onlyMaintainer {
+        require(_amount > 0, "MoksaAdapter: Nothing to recover");
         payable(msg.sender).transfer(_amount);
         emit Recovered(address(0), _amount);
     }
@@ -84,7 +84,7 @@ abstract contract YakAdapter is Maintainable {
         _swap(_amountIn, _amountOut, _fromToken, _toToken, _to);
         uint256 diff = IERC20(_toToken).balanceOf(_to) - toBal0;
         require(diff >= _amountOut, "Insufficient amount-out");
-        emit YakAdapterSwap(_fromToken, _toToken, _amountIn, _amountOut);
+        emit MoksaAdapterSwap(_fromToken, _toToken, _amountIn, _amountOut);
     }
 
     function _returnTo(

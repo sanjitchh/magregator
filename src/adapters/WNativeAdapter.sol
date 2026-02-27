@@ -19,15 +19,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "../YakAdapter.sol";
+import "../MoksaAdapter.sol";
 
-contract WNativeAdapter is YakAdapter {
+contract WNativeAdapter is MoksaAdapter {
     address internal immutable WNATIVE;
 
     constructor(
         address _wNative,
         uint256 _swapGasEstimate
-    ) YakAdapter("WAvaxAdapter", _swapGasEstimate) {
+    ) MoksaAdapter("WrappedNativeAdapter", _swapGasEstimate) {
         WNATIVE = _wNative;
         setSwapGasEstimate(_swapGasEstimate);
     }

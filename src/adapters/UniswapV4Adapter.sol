@@ -20,7 +20,7 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from "../interface/IERC20.sol";
 import {SafeERC20} from "../lib/SafeERC20.sol";
-import {YakAdapter} from "../YakAdapter.sol";
+import {MoksaAdapter} from "../MoksaAdapter.sol";
 import {IUniswapV4StaticQuoter} from "../interface/IUniswapV4StaticQuoter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
@@ -38,7 +38,7 @@ import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {IWETH} from "../interface/IWETH.sol";
 
-contract UniswapV4Adapter is YakAdapter, IUnlockCallback {
+contract UniswapV4Adapter is MoksaAdapter, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
@@ -58,7 +58,7 @@ contract UniswapV4Adapter is YakAdapter, IUnlockCallback {
         address _staticQuoter,
         address _poolManager,
         address _wrappedNative
-    ) YakAdapter(_name, _swapGasEstimate) {
+    ) MoksaAdapter(_name, _swapGasEstimate) {
         staticQuoter = IUniswapV4StaticQuoter(_staticQuoter);
         poolManager = IPoolManager(_poolManager);
         WNATIVE = _wrappedNative;
@@ -137,7 +137,7 @@ contract UniswapV4Adapter is YakAdapter, IUnlockCallback {
         view
         returns (PoolKey memory bestPool, uint256 bestAmountOut)
     {
-        // Check pools for the token pair (e.g., WAVAX/USDC pools)
+        // Check pools for the token pair (e.g., wrapped-native/USDC pools)
         PoolKey[] storage pools = _getPoolsForPair(tokenIn, tokenOut);
         (bestPool, bestAmountOut) = _tryPools(pools, tokenIn, amountIn, bestPool, bestAmountOut);
 

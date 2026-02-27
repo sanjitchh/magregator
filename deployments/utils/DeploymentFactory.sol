@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "./INetworkDeployments.sol";
-import "../AvalancheDeployments.sol";
 import "../MonadDeployments.sol";
 
 contract DeploymentFactory {
@@ -11,9 +10,7 @@ contract DeploymentFactory {
     function getDeployments() public returns (INetworkDeployments) {
         uint256 chainId = block.chainid;
 
-        if (chainId == 43114) {
-            return INetworkDeployments(address(new AvalancheDeployments()));
-        } else if (chainId == 143 || chainId == 10143) {
+        if (chainId == 143 || chainId == 10143) {
             return INetworkDeployments(address(new MonadDeployments()));
         } else {
             revert UnsupportedNetwork(chainId);
@@ -21,9 +18,7 @@ contract DeploymentFactory {
     }
 
     function getDeploymentsByChainId(uint256 chainId) public returns (INetworkDeployments) {
-        if (chainId == 43114) {
-            return INetworkDeployments(address(new AvalancheDeployments()));
-        } else if (chainId == 143 || chainId == 10143) {
+        if (chainId == 143 || chainId == 10143) {
             return INetworkDeployments(address(new MonadDeployments()));
         } else {
             revert UnsupportedNetwork(chainId);
@@ -31,12 +26,10 @@ contract DeploymentFactory {
     }
 
     function getSupportedNetworks() public pure returns (uint256[] memory chainIds, string[] memory names) {
-        chainIds = new uint256[](2);
-        names = new string[](2);
+        chainIds = new uint256[](1);
+        names = new string[](1);
 
-        chainIds[0] = 43114;
-        names[0] = "Avalanche";
-        chainIds[1] = 143;
-        names[1] = "Monad";
+        chainIds[0] = 143;
+        names[0] = "Monad";
     }
 }

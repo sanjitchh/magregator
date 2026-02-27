@@ -35,9 +35,9 @@ interface IERC20 {
         bytes32
     ) external; // Only tokens that support permit
 
-    function swap(address, uint256) external; // Only Avalanche bridge tokens
+    function swap(address, uint256) external; // Optional bridge-token extension
 
-    function swapSupply(address) external view returns (uint256); // Only Avalanche bridge tokens
+    function swapSupply(address) external view returns (uint256); // Optional bridge-token extension
 
     function totalSupply() external view returns (uint256);
 }

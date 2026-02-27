@@ -6,7 +6,7 @@
 
 Adapter server as a common interface for external contracts to perform queries and swaps. 
 
-YakRouter uses adapter to find the best offer between two tokens for a given amount and execute this offer. It also accounts for query&swap gas-cost of the offer and for that needs gasEstimate from the adapter.
+MoksaRouter uses adapter to find the best offer between two tokens for a given amount and execute this offer. It also accounts for query&swap gas-cost of the offer and for that needs gasEstimate from the adapter.
 
 #### Adapter must expose:
  * `query(uint256 amountIn, address tokenIn, address tokenOut) returns (uint256 minAmountOut)`
@@ -20,7 +20,7 @@ Returns rough gas estimate for querying and swapping through the adapter
 
 ###### Multiple pools in adapter
 
-For YakRouter adapter also acts as indentifier(address) where given offer can be swapped. If multiple pools are referenced through single adapter they should be distinguishable by tokenIn-tokenOut combination.
+For MoksaRouter adapter also acts as indentifier(address) where given offer can be swapped. If multiple pools are referenced through single adapter they should be distinguishable by tokenIn-tokenOut combination.
 
 For example: UniswapV2 offers factory method through which token combination is mapped to the corresponding pool. Mapping is injective (only one pool for token combination). Swap method can unambiguously reference tokenIn&tokenTo to a pool to swap through. Contrary, KyberDex factory maps token combination to a list of pools. Here swap method can't know through which pool user wants to swap through.
 
@@ -53,17 +53,17 @@ Use boilerplate below as a starting point for developing an adapter.
 pragma solidity ^0.8.0;
 
 import "../lib/SafeERC20.sol";
-import "../YakAdapter.sol";
+import "../MoksaAdapter.sol";
 
 
-contract ExampleAdapter is YakAdapter {
+contract ExampleAdapter is MoksaAdapter {
     using SafeERC20 for IERC20;
 
     constructor(
         string memory name, 
         uint256 _swapGasEstimate,
         ...
-    ) YakAdapter(name, _swapGasEstimate) {
+    ) MoksaAdapter(name, _swapGasEstimate) {
         // init vars, set allowances ...
     }
 
@@ -107,7 +107,7 @@ const { setTestEnv, addresses } = require('../../../utils/test-env')
 const { exampleDex } = addresses.exampleNetwork
 
 
-describe('YakAdapter - Example', () => {
+describe('MoksaAdapter - Example', () => {
     
     let testEnv
     let tkns

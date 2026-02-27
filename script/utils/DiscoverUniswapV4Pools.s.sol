@@ -24,14 +24,14 @@ import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
  *
  * forge script script/utils/DiscoverUniswapV4Pools.s.sol:DiscoverUniswapV4Pools \
  *   --sig "run(address,address)" <token0> <token1> \
- *   --rpc-url avalanche
+ *   --rpc-url monad
  *
  * Example:
  * forge script script/utils/DiscoverUniswapV4Pools.s.sol:DiscoverUniswapV4Pools \
  *   --sig "run(address,address)" \
- *   0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7 \
- *   0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E \
- *   --rpc-url avalanche
+ *   0x0000000000000000000000000000000000000000 \
+ *   0x0000000000000000000000000000000000000000 \
+ *   --rpc-url monad
  */
 contract DiscoverUniswapV4Pools is Script {
     using PoolIdLibrary for PoolKey;
@@ -69,7 +69,7 @@ contract DiscoverUniswapV4Pools is Script {
         tickSpacings[0] = 1; // Used in tests (very tight, V4 specific)
         tickSpacings[1] = 10; // Used in tests (0.05% fee equivalent from V3)
         tickSpacings[2] = 60; // Most common (0.3% fee equivalent from V3, used in tests)
-        tickSpacings[3] = 200; // Used by ArenaAdapter (1% fee equivalent from V3)
+        tickSpacings[3] = 200; // 1% fee-equivalent spacing from V3
 
         Currency currency0 = Currency.wrap(token0);
         Currency currency1 = Currency.wrap(token1);
@@ -158,4 +158,3 @@ contract DiscoverUniswapV4Pools is Script {
         }
     }
 }
-

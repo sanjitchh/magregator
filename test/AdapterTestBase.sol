@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from "forge-std/Test.sol";
-import {YakAdapter} from "../src/YakAdapter.sol";
+import {MoksaAdapter} from "../src/MoksaAdapter.sol";
 import {IERC20} from "../src/interface/IERC20.sol";
 
 contract AdapterTestBase is Test {
@@ -21,7 +21,7 @@ contract AdapterTestBase is Test {
      * @param tolerance Tolerance for output comparison (e.g., 0.01e18 for 1%)
      */
     function assertSwapMatchesQuery(
-        YakAdapter adapter,
+        MoksaAdapter adapter,
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
@@ -49,11 +49,11 @@ contract AdapterTestBase is Test {
     /**
      * @dev Simplified version with default 1% tolerance
      */
-    function assertSwapMatchesQuery(YakAdapter adapter, address tokenIn, address tokenOut, uint256 amountIn) internal {
+    function assertSwapMatchesQuery(MoksaAdapter adapter, address tokenIn, address tokenOut, uint256 amountIn) internal {
         assertSwapMatchesQuery(adapter, tokenIn, tokenOut, amountIn, 0.01e18);
     }
 
-    function assertSwapFails(YakAdapter adapter, address tokenIn, address tokenOut, uint256 amountIn) internal {
+    function assertSwapFails(MoksaAdapter adapter, address tokenIn, address tokenOut, uint256 amountIn) internal {
         // Deal input tokens to this test contract
         deal(tokenIn, address(this), amountIn);
 
@@ -73,7 +73,7 @@ contract AdapterTestBase is Test {
      * @param adapter The adapter instance to test
      * @param supportedToken A token that the adapter supports
      */
-    function assertQueryReturnsZeroForUnsupportedTokens(YakAdapter adapter, address supportedToken) internal view {
+    function assertQueryReturnsZeroForUnsupportedTokens(MoksaAdapter adapter, address supportedToken) internal view {
         uint256 amountIn = 1e6; // 1 token with 6 decimals
         address unsupportedToken = address(0); // Use address zero as unsupported token
 
@@ -86,7 +86,7 @@ contract AdapterTestBase is Test {
         assertEq(result2, 0, "Query should return 0 for unsupported tokenOut");
     }
 
-    function assertQueryReturnsZero(YakAdapter adapter, address tokenIn, address tokenOut, uint256 amountIn)
+    function assertQueryReturnsZero(MoksaAdapter adapter, address tokenIn, address tokenOut, uint256 amountIn)
         internal
         view
     {
@@ -100,7 +100,7 @@ contract AdapterTestBase is Test {
      * @param options Array of swap options to test
      * @param accuracyPct Accuracy percentage (default 10%)
      */
-    function assertGasEstimateIsSensible(YakAdapter adapter, SwapOption[] memory options, uint256 accuracyPct)
+    function assertGasEstimateIsSensible(MoksaAdapter adapter, SwapOption[] memory options, uint256 accuracyPct)
         internal
     {
         uint256 maxGas = 0;
@@ -126,14 +126,14 @@ contract AdapterTestBase is Test {
     /**
      * @dev Simplified version with default 10% accuracy
      */
-    function assertGasEstimateIsSensible(YakAdapter adapter, SwapOption[] memory options) internal {
+    function assertGasEstimateIsSensible(MoksaAdapter adapter, SwapOption[] memory options) internal {
         assertGasEstimateIsSensible(adapter, options, 10);
     }
 
     /**
      * @dev Measure gas used for a swap operation
      */
-    function _getGasEstimateForSwapAndQuery(YakAdapter adapter, uint256 amountIn, address tokenFrom, address tokenTo)
+    function _getGasEstimateForSwapAndQuery(MoksaAdapter adapter, uint256 amountIn, address tokenFrom, address tokenTo)
         internal
         returns (uint256)
     {
