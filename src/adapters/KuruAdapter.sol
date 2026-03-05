@@ -20,21 +20,27 @@ contract KuruAdapter is MoksaAdapter {
         uint256 takerFeeBps;
     }
 
-    address public immutable wmon;
-    address public immutable ausd;
-    address public immutable usdc;
-    address public immutable monAusdMarket;
-    address public immutable monUsdcMarket;
+    address public wmon;
+    address public ausd;
+    address public usdc;
+    address public monAusdMarket;
+    address public monUsdcMarket;
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         string memory _name,
         uint256 _swapGasEstimate,
         address _wmon,
         address _ausd,
         address _usdc,
         address _monAusdMarket,
-        address _monUsdcMarket
-    ) MoksaAdapter(_name, _swapGasEstimate) {
+        address _monUsdcMarket,
+        address _initialMaintainer
+    ) external initializer {
+        __MoksaAdapter_init(_name, _swapGasEstimate, _initialMaintainer);
         wmon = _wmon;
         ausd = _ausd;
         usdc = _usdc;

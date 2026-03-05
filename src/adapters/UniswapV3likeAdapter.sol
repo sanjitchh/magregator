@@ -66,12 +66,14 @@ abstract contract UniswapV3likeAdapter is MoksaAdapter {
     uint256 public quoterGasLimit;
     address public quoter;
 
-    constructor(
+    function __UniswapV3likeAdapter_init(
         string memory _name,
         uint256 _swapGasEstimate,
         address _quoter,
-        uint256 _quoterGasLimit
-    ) MoksaAdapter(_name, _swapGasEstimate) {
+        uint256 _quoterGasLimit,
+        address _initialMaintainer
+    ) internal onlyInitializing {
+        __MoksaAdapter_init(_name, _swapGasEstimate, _initialMaintainer);
         setQuoterGasLimit(_quoterGasLimit);
         setQuoter(_quoter);
     }

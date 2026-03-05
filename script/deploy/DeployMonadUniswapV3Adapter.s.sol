@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../../src/adapters/UniswapV3Adapter.sol";
 
 contract DeployMonadUniswapV3Adapter is Script {
@@ -23,10 +24,19 @@ contract DeployMonadUniswapV3Adapter is Script {
         defaultFees[2] = 3000;
         defaultFees[3] = 10_000;
 
-        UniswapV3Adapter adapter =
-            new UniswapV3Adapter("MonadUniswapV3Adapter", gasEstimate, quoterGasLimit, quoter, factory, defaultFees);
+        address maintainer = vm.envAddress("MONAD_INITIAL_MAINTAINER");
+        UniswapV3Adapter implementation = new UniswapV3Adapter();
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(implementation),
+            abi.encodeCall(
+                UniswapV3Adapter.initialize,
+                ("MonadUniswapV3Adapter", gasEstimate, quoterGasLimit, quoter, factory, defaultFees, maintainer)
+            )
+        );
+        UniswapV3Adapter adapter = UniswapV3Adapter(payable(address(proxy)));
 
-        console.log("Monad UniswapV3Adapter deployed at:", address(adapter));
+        console.log("Monad UniswapV3Adapter implementation:", address(implementation));
+        console.log("Monad UniswapV3Adapter proxy:", address(adapter));
         console.log("Factory:", factory);
         console.log("Quoter:", quoter);
         console.log("Gas estimate:", adapter.swapGasEstimate());

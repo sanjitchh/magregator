@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../../src/adapters/KyberElasticAdapter.sol";
 
 contract DeployMonadKyberElasticAdapter is Script {
@@ -25,10 +26,19 @@ contract DeployMonadKyberElasticAdapter is Script {
             whitelistedPools[i] = pool;
         }
 
-        KyberElasticAdapter adapter =
-            new KyberElasticAdapter("MonadKyberElasticAdapter", gasEstimate, quoterGasLimit, quoter, whitelistedPools);
+        address maintainer = vm.envAddress("MONAD_INITIAL_MAINTAINER");
+        KyberElasticAdapter implementation = new KyberElasticAdapter();
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(implementation),
+            abi.encodeCall(
+                KyberElasticAdapter.initialize,
+                ("MonadKyberElasticAdapter", gasEstimate, quoterGasLimit, quoter, whitelistedPools, maintainer)
+            )
+        );
+        KyberElasticAdapter adapter = KyberElasticAdapter(payable(address(proxy)));
 
-        console.log("Monad KyberElasticAdapter deployed at:", address(adapter));
+        console.log("Monad KyberElasticAdapter implementation:", address(implementation));
+        console.log("Monad KyberElasticAdapter proxy:", address(adapter));
         console.log("Quoter:", quoter);
         console.log("Quote gas limit:", quoterGasLimit);
         console.log("Swap gas estimate:", adapter.swapGasEstimate());

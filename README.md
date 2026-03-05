@@ -1,33 +1,24 @@
 # Moksa Aggregator
 
-Moksa Aggregator is a smart-contract DEX aggregator focused on Monad.
+Moksa Aggregator is a modular DEX-aggregation router with upgradeable router/adapters and multi-network deployment support.
 
-## Current scope
+## Networks
 
-- Primary network: Monad (`chainId` 143 / 10143)
-- Router: `MoksaRouter`
-- Active Monad adapters:
-  - `UniswapV2Adapter`
-  - `UniswapV3Adapter`
-  - `PancakeV3Adapter`
-  - `KuruAdapter`
-  - `UniswapV4Adapter`
-  - `KyberElasticAdapter`
-  - `WNativeAdapter`
+- Monad (`chainId` 143 / 10143)
+- Ethereum Sepolia (`chainId` 11155111)
 
-## Architecture
-
-Core contracts:
-
-- `src/MoksaRouter.sol`
-- `src/MoksaAdapter.sol`
-- `src/interface/IMoksaRouter.sol`
-- `src/lib/MoksaViewUtils.sol`
-
-Network deployment registry:
+Network registry contracts:
 
 - `deployments/MonadDeployments.sol`
+- `deployments/SepoliaDeployments.sol`
 - `deployments/utils/DeploymentFactory.sol`
+
+## Upgradeability model
+
+- Contracts use UUPS upgradeability with `ERC1967Proxy`.
+- Implementation contracts are deployed once per component.
+- Proxy is initialized during deployment.
+- Upgrade authorization is controlled by `MAINTAINER_ROLE`.
 
 ## Setup
 
@@ -35,73 +26,63 @@ Network deployment registry:
 cp .env.sample .env
 ```
 
-Set Monad variables in `.env`:
+Fill the environment variables for your target network (`MONAD_*` or `SEPOLIA_*`).
 
-- `MONAD_RPC`
-- `MONAD_UNIV2_FACTORY`
-- `MONAD_UNIV3_FACTORY`
-- `MONAD_UNIV3_QUOTER`
-- `MONAD_PANCAKEV3_FACTORY`
-- `MONAD_PANCAKEV3_QUOTER`
-- `MONAD_PANCAKEV3_QUOTER_GAS_LIMIT`
-- `MONAD_PANCAKEV3_GAS_ESTIMATE`
-- `MONAD_AUSD`
-- `MONAD_USDC`
-- `MONAD_KURU_MON_AUSD_MARKET`
-- `MONAD_KURU_MON_USDC_MARKET`
-- `MONAD_KURU_GAS_ESTIMATE`
-- `MONAD_UNIV4_POOL_MANAGER`
-- `MONAD_UNIV4_STATIC_QUOTER`
-- `MONAD_UNIV4_GAS_ESTIMATE`
-- `MONAD_WRAPPED_NATIVE`
-- `MONAD_KYBER_QUOTER`
-- `MONAD_KYBER_QUOTER_GAS_LIMIT`
-- `MONAD_KYBER_GAS_ESTIMATE`
-- `MONAD_KYBER_POOL_COUNT`
-- `MONAD_KYBER_POOL_0 ... MONAD_KYBER_POOL_N`
+Required baseline values:
 
-## Deploy scripts (Monad)
+- `<PREFIX>_RPC`
+- `<PREFIX>_INITIAL_MAINTAINER`
+- `<PREFIX>_FEE_CLAIMER`
+- `<PREFIX>_WRAPPED_NATIVE`
 
-- `script/deploy/DeployMonadUniswapV2Adapter.s.sol`
-- `script/deploy/DeployMonadUniswapV3Adapter.s.sol`
-- `script/deploy/DeployMonadPancakeV3Adapter.s.sol`
-- `script/deploy/DeployMonadKuruAdapter.s.sol`
-- `script/deploy/DeployMonadUniswapV4Adapter.s.sol`
-- `script/deploy/DeployMonadKyberElasticAdapter.s.sol`
-- `script/deploy/DeployMonadWNativeAdapter.s.sol`
+## Common deploy script
 
-Example:
+Use one network-agnostic deployment script:
+
+- `script/deploy/DeployUpgradeable.s.sol`
+
+Available entrypoints:
+
+- `runRouter(string)`
+- `runUniswapV2(string)`
+- `runUniswapV3(string)`
+- `runPancakeV3(string)`
+- `runKyberElastic(string)`
+- `runUniswapV4(string)`
+- `runWNative(string)`
+- `runKuru(string)`
+
+Example (Sepolia Uniswap V3 adapter):
 
 ```bash
-forge script script/deploy/DeployMonadUniswapV4Adapter.s.sol:DeployMonadUniswapV4Adapter --account deployer --rpc-url monad --broadcast
+forge script script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable \
+  --sig "runUniswapV3(string)" SEPOLIA \
+  --rpc-url sepolia \
+  --account deployer \
+  --broadcast
 ```
+
+## Interactive deploy menu
+
+Use the interactive wrapper to choose network + component:
+
+```bash
+./script/deploy/interactive.sh
+```
+
+The script prompts for:
+
+- Network (`monad` or `sepolia`)
+- Component (router/adapter)
+- Broadcast mode
 
 ## Admin scripts
 
-- List adapters:
+These scripts now work for any supported network via `DeploymentFactory`:
 
 ```bash
-forge script script/admin/ListAdapters.s.sol --rpc-url monad
+forge script script/admin/ListAdapters.s.sol --rpc-url sepolia
+forge script script/admin/UpdateAdapters.s.sol --account deployer --rpc-url sepolia --broadcast
+forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url sepolia --broadcast
+forge script script/admin/ManageUniswapV4Pools.s.sol --account deployer --rpc-url sepolia --broadcast
 ```
-
-- Sync adapters from deployment registry:
-
-```bash
-forge script script/admin/UpdateAdapters.s.sol --account deployer --rpc-url monad --broadcast
-```
-
-- Sync trusted hop tokens:
-
-```bash
-forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url monad --broadcast
-```
-
-- Manage Uniswap V4 pools:
-
-```bash
-forge script script/admin/ManageUniswapV4Pools.s.sol --account deployer --rpc-url monad --broadcast
-```
-
-## Future expansion
-
-The codebase is intentionally kept modular to add more networks later (including Ethereum mainnet) by introducing new deployment configs under `deployments/` and wiring them in `DeploymentFactory`.

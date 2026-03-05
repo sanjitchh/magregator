@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../../src/adapters/PancakeV3Adapter.sol";
 
 contract DeployMonadPancakeV3Adapter is Script {
@@ -22,10 +23,19 @@ contract DeployMonadPancakeV3Adapter is Script {
         defaultFees[1] = 500;
         defaultFees[2] = 10_000;
 
-        PancakeV3Adapter adapter =
-            new PancakeV3Adapter("MonadPancakeV3Adapter", gasEstimate, quoterGasLimit, quoter, factory, defaultFees);
+        address maintainer = vm.envAddress("MONAD_INITIAL_MAINTAINER");
+        PancakeV3Adapter implementation = new PancakeV3Adapter();
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(implementation),
+            abi.encodeCall(
+                PancakeV3Adapter.initialize,
+                ("MonadPancakeV3Adapter", gasEstimate, quoterGasLimit, quoter, factory, defaultFees, maintainer)
+            )
+        );
+        PancakeV3Adapter adapter = PancakeV3Adapter(payable(address(proxy)));
 
-        console.log("Monad PancakeV3Adapter deployed at:", address(adapter));
+        console.log("Monad PancakeV3Adapter implementation:", address(implementation));
+        console.log("Monad PancakeV3Adapter proxy:", address(adapter));
         console.log("Factory:", factory);
         console.log("Quoter:", quoter);
         console.log("Quote gas limit:", quoterGasLimit);

@@ -27,13 +27,15 @@ import "./lib/SafeERC20.sol";
 import "./lib/Maintainable.sol";
 import "./lib/MoksaViewUtils.sol";
 import "./lib/Recoverable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract MoksaRouter is Maintainable, Recoverable, IMoksaRouter {
+contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverable, IMoksaRouter {
     using SafeERC20 for IERC20;
     using OfferUtils for Offer;
 
-    address public immutable WNATIVE;
+    address public WNATIVE;
     address public constant NATIVE = address(0);
     string public constant NAME = "MoksaRouter";
     uint256 public constant FEE_DENOMINATOR = 1e4;
@@ -42,18 +44,27 @@ contract MoksaRouter is Maintainable, Recoverable, IMoksaRouter {
     address[] public TRUSTED_TOKENS;
     address[] public ADAPTERS;
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         address[] memory _adapters,
         address[] memory _trustedTokens,
         address _feeClaimer,
-        address _wrapped_native
-    ) {
+        address _wrapped_native,
+        address _initialMaintainer
+    ) external initializer {
+        __Maintainable_init(_initialMaintainer);
+
         setAllowanceForWrapping(_wrapped_native);
         setTrustedTokens(_trustedTokens);
         setFeeClaimer(_feeClaimer);
         setAdapters(_adapters);
         WNATIVE = _wrapped_native;
     }
+
+    function _authorizeUpgrade(address) internal override onlyMaintainer {}
 
     // -- SETTERS --
 

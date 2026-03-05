@@ -39,13 +39,19 @@ contract KyberElasticAdapter is UniswapV3likeAdapter {
 
     mapping(address => mapping(address => address)) public tknsToPoolWL;
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         string memory _name,
         uint256 _swapGasEstimate,
         uint256 _quoterGasLimit,
         address _quoter,
-        address[] memory _whitelistedPools
-    ) UniswapV3likeAdapter(_name, _swapGasEstimate, _quoter, _quoterGasLimit) {
+        address[] memory _whitelistedPools,
+        address _initialMaintainer
+    ) external initializer {
+        __UniswapV3likeAdapter_init(_name, _swapGasEstimate, _quoter, _quoterGasLimit, _initialMaintainer);
         addPoolsToWL(_whitelistedPools);
     }
 

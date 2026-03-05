@@ -33,20 +33,28 @@ abstract contract MoksaAdapter is Maintainable {
     uint256 public swapGasEstimate;
     string public name;
 
-    constructor(string memory _name, uint256 _gasEstimate) {
-        setName(_name);
-        setSwapGasEstimate(_gasEstimate);
+    function __MoksaAdapter_init(string memory _name, uint256 _gasEstimate, address initialMaintainer)
+        internal
+        onlyInitializing
+    {
+        __Maintainable_init(initialMaintainer);
+        _setName(_name);
+        _setSwapGasEstimate(_gasEstimate);
     }
 
-    function setName(string memory _name) internal {
+    function _setName(string memory _name) internal {
         require(bytes(_name).length != 0, "Invalid adapter name");
         name = _name;
     }
 
-    function setSwapGasEstimate(uint256 _estimate) public onlyMaintainer {
+    function _setSwapGasEstimate(uint256 _estimate) internal {
         require(_estimate != 0, "Invalid gas-estimate");
         swapGasEstimate = _estimate;
         emit UpdatedGasEstimate(address(this), _estimate);
+    }
+
+    function setSwapGasEstimate(uint256 _estimate) public onlyMaintainer {
+        _setSwapGasEstimate(_estimate);
     }
 
     function revokeAllowance(address _token, address _spender) external onlyMaintainer {

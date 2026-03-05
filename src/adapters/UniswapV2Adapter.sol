@@ -28,15 +28,21 @@ contract UniswapV2Adapter is MoksaAdapter {
     using SafeERC20 for IERC20;
 
     uint256 internal constant FEE_DENOMINATOR = 1e3;
-    uint256 public immutable feeCompliment;
-    address public immutable factory;
+    uint256 public feeCompliment;
+    address public factory;
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         string memory _name,
         address _factory,
         uint256 _fee,
-        uint256 _swapGasEstimate
-    ) MoksaAdapter(_name, _swapGasEstimate) {
+        uint256 _swapGasEstimate,
+        address _initialMaintainer
+    ) external initializer {
+        __MoksaAdapter_init(_name, _swapGasEstimate, _initialMaintainer);
         feeCompliment = FEE_DENOMINATOR - _fee;
         factory = _factory;
     }

@@ -44,21 +44,27 @@ contract UniswapV4Adapter is MoksaAdapter, IUnlockCallback {
     using BalanceDeltaLibrary for BalanceDelta;
     using CurrencyLibrary for Currency;
 
-    IPoolManager public immutable poolManager;
-    IUniswapV4StaticQuoter public immutable staticQuoter;
-    address public immutable WNATIVE;
+    IPoolManager public poolManager;
+    IUniswapV4StaticQuoter public staticQuoter;
+    address public WNATIVE;
 
     // token pair -> pools array
     mapping(address => mapping(address => PoolKey[])) internal tokenPairPools; // On-chain lookup
     PoolKey[] public allPools; // Off-chain enumeration
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         string memory _name,
         uint256 _swapGasEstimate,
         address _staticQuoter,
         address _poolManager,
-        address _wrappedNative
-    ) MoksaAdapter(_name, _swapGasEstimate) {
+        address _wrappedNative,
+        address _initialMaintainer
+    ) external initializer {
+        __MoksaAdapter_init(_name, _swapGasEstimate, _initialMaintainer);
         staticQuoter = IUniswapV4StaticQuoter(_staticQuoter);
         poolManager = IPoolManager(_poolManager);
         WNATIVE = _wrappedNative;

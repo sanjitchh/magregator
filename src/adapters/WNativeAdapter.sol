@@ -22,14 +22,19 @@ pragma solidity ^0.8.0;
 import "../MoksaAdapter.sol";
 
 contract WNativeAdapter is MoksaAdapter {
-    address internal immutable WNATIVE;
+    address internal WNATIVE;
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         address _wNative,
-        uint256 _swapGasEstimate
-    ) MoksaAdapter("WrappedNativeAdapter", _swapGasEstimate) {
+        uint256 _swapGasEstimate,
+        address _initialMaintainer
+    ) external initializer {
+        __MoksaAdapter_init("WrappedNativeAdapter", _swapGasEstimate, _initialMaintainer);
         WNATIVE = _wNative;
-        setSwapGasEstimate(_swapGasEstimate);
     }
 
     function _query(

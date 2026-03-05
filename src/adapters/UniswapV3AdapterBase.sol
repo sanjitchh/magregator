@@ -33,18 +33,20 @@ interface IUniV3Factory {
 contract UniswapV3AdapterBase is UniswapV3likeAdapter {
     using SafeERC20 for IERC20;
 
-    address immutable FACTORY;
+    address public FACTORY;
     mapping(uint24 => bool) public isFeeAmountEnabled;
     uint24[] public feeAmounts;
 
-    constructor(
+    function __UniswapV3AdapterBase_init(
         string memory _name,
         uint256 _swapGasEstimate,
         uint256 _quoterGasLimit,
         address _quoter,
         address _factory,
-        uint24[] memory _defaultFees
-    ) UniswapV3likeAdapter(_name, _swapGasEstimate, _quoter, _quoterGasLimit) {
+        uint24[] memory _defaultFees,
+        address _initialMaintainer
+    ) internal onlyInitializing {
+        __UniswapV3likeAdapter_init(_name, _swapGasEstimate, _quoter, _quoterGasLimit, _initialMaintainer);
         FACTORY = _factory;
         for (uint i = 0; i < _defaultFees.length; i++) {
             addFeeAmount(_defaultFees[i]);

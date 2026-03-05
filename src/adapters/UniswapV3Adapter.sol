@@ -22,14 +22,28 @@ import "./UniswapV3AdapterBase.sol";
 
 contract UniswapV3Adapter is UniswapV3AdapterBase {
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         string memory _name,
         uint256 _swapGasEstimate,
         uint256 _quoterGasLimit,
         address _quoter,
         address _factory,
-        uint24[] memory _defaultFees
-    ) UniswapV3AdapterBase(_name, _swapGasEstimate, _quoterGasLimit, _quoter, _factory, _defaultFees) {
+        uint24[] memory _defaultFees,
+        address _initialMaintainer
+    ) external initializer {
+        __UniswapV3AdapterBase_init(
+            _name,
+            _swapGasEstimate,
+            _quoterGasLimit,
+            _quoter,
+            _factory,
+            _defaultFees,
+            _initialMaintainer
+        );
     }
 
     function uniswapV3SwapCallback(

@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /**
  * @dev Contract module which extends the basic access control mechanism of Ownable
@@ -17,14 +18,13 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * the accounts with the role of maintainer.
  */
 
-abstract contract Maintainable is Context, AccessControl {
+abstract contract Maintainable is Initializable, Context, AccessControl {
     bytes32 public constant MAINTAINER_ROLE = keccak256("MAINTAINER_ROLE");
 
-    constructor() {
-        address msgSender = _msgSender();
-        // members of the DEFAULT_ADMIN_ROLE alone may revoke and grant role membership
-        _setupRole(DEFAULT_ADMIN_ROLE, msgSender);
-        _setupRole(MAINTAINER_ROLE, msgSender);
+    function __Maintainable_init(address initialMaintainer) internal onlyInitializing {
+        require(initialMaintainer != address(0), "Maintainable: zero maintainer");
+        _grantRole(DEFAULT_ADMIN_ROLE, initialMaintainer);
+        _grantRole(MAINTAINER_ROLE, initialMaintainer);
     }
 
     function addMaintainer(address addedMaintainer) public virtual {

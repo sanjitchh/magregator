@@ -19,6 +19,7 @@ remappings = [
 
 [rpc_endpoints]
 monad = "${MONAD_RPC}"
+sepolia = "${SEPOLIA_RPC}"
 ethereum = "${ETHEREUM_RPC}"
 
 [dependencies]
