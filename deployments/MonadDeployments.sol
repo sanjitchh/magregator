@@ -8,12 +8,13 @@ contract MonadDeployments is INetworkDeployments {
     uint256 constant CHAIN_ID = 143;
 
     // Fill these addresses after deploying the router and adapters on Monad.
-    address constant ROUTER = 0xC1AE182eEd95cb9215B140db4aFD79c9E86f51C7;
-    address constant UNISWAP_V3_ADAPTER = 0x7694078AeC18DaE9238dAb946945BC2fE20d7322;
-    address constant PANCAKE_V3_ADAPTER = 0xB5162cAf7cE4f228Aa5A8cb4B504229EC2fe44fa;
-    address constant KURU_ADAPTER = 0xeD91CA78a2E1c759022d42D4C97ecA472A70014b;
+    address constant ROUTER = 0x09e5c9eE065978F6a9a2F07CF8aAf2B449D3318e;
+    address constant UNISWAP_V3_ADAPTER = 0x6405e08499364968321AaAD480da88DC4283e943;
+    address constant PANCAKE_V3_ADAPTER = 0x7caF364caA220D606cd68Ca9960DE4e05cb27158;
+    address constant KURU_ADAPTER = 0x8F88Da856160b6753063F90d7180B800f9E67ee0;
     address constant KYBER_ELASTIC_ADAPTER = address(0);
     address constant UNISWAP_V4_ADAPTER = address(0);
+    address constant WNATIVE_ADAPTER = 0xEe50F0611F201A255e4852e44EBCcBd0cB86bF02;
 
     function getChainId() public pure override returns (uint256) {
         return CHAIN_ID;
@@ -33,6 +34,7 @@ contract MonadDeployments is INetworkDeployments {
         if (PANCAKE_V3_ADAPTER != address(0)) count++;
         if (KURU_ADAPTER != address(0)) count++;
         if (KYBER_ELASTIC_ADAPTER != address(0)) count++;
+        if (WNATIVE_ADAPTER != address(0)) count++;
 
         address[] memory adapters = new address[](count);
         uint256 i;
@@ -51,6 +53,10 @@ contract MonadDeployments is INetworkDeployments {
         }
         if (KYBER_ELASTIC_ADAPTER != address(0)) {
             adapters[i] = KYBER_ELASTIC_ADAPTER;
+            i++;
+        }
+        if (WNATIVE_ADAPTER != address(0)) {
+            adapters[i] = WNATIVE_ADAPTER;
         }
 
         return adapters;
