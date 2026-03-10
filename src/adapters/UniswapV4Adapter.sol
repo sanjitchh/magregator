@@ -44,6 +44,8 @@ contract UniswapV4Adapter is MoksaAdapter, IUnlockCallback {
     using BalanceDeltaLibrary for BalanceDelta;
     using CurrencyLibrary for Currency;
 
+    event UpdatedStaticQuoter(address indexed oldQuoter, address indexed newQuoter);
+
     IPoolManager public poolManager;
     IUniswapV4StaticQuoter public staticQuoter;
     address public WNATIVE;
@@ -65,9 +67,20 @@ contract UniswapV4Adapter is MoksaAdapter, IUnlockCallback {
         address _initialMaintainer
     ) external initializer {
         __MoksaAdapter_init(_name, _swapGasEstimate, _initialMaintainer);
-        staticQuoter = IUniswapV4StaticQuoter(_staticQuoter);
+        _setStaticQuoter(_staticQuoter);
         poolManager = IPoolManager(_poolManager);
         WNATIVE = _wrappedNative;
+    }
+
+    function setStaticQuoter(address _staticQuoter) external onlyMaintainer {
+        _setStaticQuoter(_staticQuoter);
+    }
+
+    function _setStaticQuoter(address _staticQuoter) internal {
+        require(_staticQuoter != address(0), "UniswapV4Adapter: zero quoter");
+        address oldQuoter = address(staticQuoter);
+        staticQuoter = IUniswapV4StaticQuoter(_staticQuoter);
+        emit UpdatedStaticQuoter(oldQuoter, _staticQuoter);
     }
 
     function addPool(PoolKey calldata poolKey) external onlyMaintainer {

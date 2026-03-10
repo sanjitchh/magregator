@@ -40,6 +40,10 @@ contract UniswapV3AdapterBase is UniswapV3likeAdapter {
         for (uint256 i; i < _amounts.length; ++i) enableFeeAmount(_amounts[i]);
     }
 
+    function getFeeAmounts() external view returns (uint24[] memory) {
+        return feeAmounts;
+    }
+
     function enableFeeAmount(uint24 _fee) internal {
         require(!isFeeAmountEnabled[_fee], "Fee already enabled");
         if (IUniV3Factory(FACTORY).feeAmountTickSpacing(_fee) == 0)

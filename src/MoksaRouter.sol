@@ -85,6 +85,14 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         return ADAPTERS.length;
     }
 
+    function getTrustedTokens() external view returns (address[] memory) {
+        return TRUSTED_TOKENS;
+    }
+
+    function getAdapters() external view returns (address[] memory) {
+        return ADAPTERS;
+    }
+
     // Fallback
     receive() external payable {}
 

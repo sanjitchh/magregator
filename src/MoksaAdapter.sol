@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import "./interface/IERC20.sol";
 import "./lib/SafeERC20.sol";
 import "./lib/Maintainable.sol";
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-abstract contract MoksaAdapter is Maintainable {
+abstract contract MoksaAdapter is UUPSUpgradeable, Maintainable {
     using SafeERC20 for IERC20;
 
     event MoksaAdapterSwap(address indexed _tokenFrom, address indexed _tokenTo, uint256 _amountIn, uint256 _amountOut);
@@ -24,6 +25,8 @@ abstract contract MoksaAdapter is Maintainable {
         _setName(_name);
         _setSwapGasEstimate(_gasEstimate);
     }
+
+    function _authorizeUpgrade(address) internal override onlyMaintainer {}
 
     function _setName(string memory _name) internal {
         require(bytes(_name).length != 0, "Invalid adapter name");

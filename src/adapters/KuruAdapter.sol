@@ -10,6 +10,9 @@ import "../MoksaAdapter.sol";
 contract KuruAdapter is MoksaAdapter {
     using SafeERC20 for IERC20;
 
+    event UpdatedMonAusdMarket(address indexed oldMarket, address indexed newMarket);
+    event UpdatedMonUsdcMarket(address indexed oldMarket, address indexed newMarket);
+
     uint256 private constant BPS = 10_000;
 
     struct KuruMarketParams {
@@ -44,11 +47,44 @@ contract KuruAdapter is MoksaAdapter {
         wmon = _wmon;
         ausd = _ausd;
         usdc = _usdc;
-        monAusdMarket = _monAusdMarket;
-        monUsdcMarket = _monUsdcMarket;
+        _setMonAusdMarket(_monAusdMarket);
+        _setMonUsdcMarket(_monUsdcMarket);
+    }
 
-        IERC20(_ausd).safeApprove(_monAusdMarket, UINT_MAX);
-        IERC20(_usdc).safeApprove(_monUsdcMarket, UINT_MAX);
+    function setMonAusdMarket(address _monAusdMarket) external onlyMaintainer {
+        _setMonAusdMarket(_monAusdMarket);
+    }
+
+    function setMonUsdcMarket(address _monUsdcMarket) external onlyMaintainer {
+        _setMonUsdcMarket(_monUsdcMarket);
+    }
+
+    function _setMonAusdMarket(address _monAusdMarket) internal {
+        require(_monAusdMarket != address(0), "KuruAdapter: zero MON/AUSD market");
+        address oldMarket = monAusdMarket;
+        if (oldMarket != address(0) && oldMarket != _monAusdMarket) {
+            IERC20(ausd).safeApprove(oldMarket, 0);
+        }
+        if (oldMarket != _monAusdMarket) {
+            IERC20(ausd).safeApprove(_monAusdMarket, 0);
+            IERC20(ausd).safeApprove(_monAusdMarket, UINT_MAX);
+            monAusdMarket = _monAusdMarket;
+            emit UpdatedMonAusdMarket(oldMarket, _monAusdMarket);
+        }
+    }
+
+    function _setMonUsdcMarket(address _monUsdcMarket) internal {
+        require(_monUsdcMarket != address(0), "KuruAdapter: zero MON/USDC market");
+        address oldMarket = monUsdcMarket;
+        if (oldMarket != address(0) && oldMarket != _monUsdcMarket) {
+            IERC20(usdc).safeApprove(oldMarket, 0);
+        }
+        if (oldMarket != _monUsdcMarket) {
+            IERC20(usdc).safeApprove(_monUsdcMarket, 0);
+            IERC20(usdc).safeApprove(_monUsdcMarket, UINT_MAX);
+            monUsdcMarket = _monUsdcMarket;
+            emit UpdatedMonUsdcMarket(oldMarket, _monUsdcMarket);
+        }
     }
 
     function _query(uint256 _amountIn, address _tokenIn, address _tokenOut) internal view override returns (uint256) {

@@ -19,6 +19,10 @@ contract WNativeAdapter is MoksaAdapter {
         WNATIVE = _wNative;
     }
 
+    function getWrappedNative() external view returns (address) {
+        return WNATIVE;
+    }
+
     function _query(
         uint256 _amountIn,
         address _tokenIn,

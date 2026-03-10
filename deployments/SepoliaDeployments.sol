@@ -9,7 +9,7 @@ contract SepoliaDeployments is INetworkDeployments {
 
     // Fill these addresses after deploying upgradeable router and adapters on Sepolia.
     address constant ROUTER = 0x009B03c9DCc4B54022188207ca17fF3303D6055F;
-    address constant UNISWAP_V3_ADAPTER = 0xB5162cAf7cE4f228Aa5A8cb4B504229EC2fe44fa;
+    address constant UNISWAP_V3_ADAPTER = 0x7caF364caA220D606cd68Ca9960DE4e05cb27158;
     address constant PANCAKE_V3_ADAPTER = address(0);
     address constant KURU_ADAPTER = address(0);
     address constant KYBER_ELASTIC_ADAPTER = address(0);
