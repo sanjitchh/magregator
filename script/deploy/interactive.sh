@@ -3,6 +3,24 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+ACTION_LABEL=''
+SCRIPT_TARGET=''
+SIG=''
+NEEDS_PREFIX=0
+MUTATES_STATE=0
+DEPLOYER_PK=''
+declare -a EXTRA_ARGS=()
+
+reset_action_config() {
+  ACTION_LABEL=''
+  SCRIPT_TARGET=''
+  SIG=''
+  NEEDS_PREFIX=0
+  MUTATES_STATE=0
+  DEPLOYER_PK=''
+  EXTRA_ARGS=()
+}
+
 load_env() {
   if [[ -f "$ROOT_DIR/.env" ]]; then
     set -a
@@ -31,68 +49,59 @@ select_network() {
   done
 }
 
-select_component() {
-  echo "Choose action:"
-  select c in router upgrade-router uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru v3staticquoter quit; do
-    case "$c" in
-      router)
-        ACTION_LABEL='deploy router'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runRouter(string)'
+prompt_address() {
+  local prompt="$1"
+  local value
+  read -r -p "$prompt: " value
+  printf '%s' "$value"
+}
+
+prompt_uint() {
+  local prompt="$1"
+  local value
+  read -r -p "$prompt: " value
+  printf '%s' "$value"
+}
+
+prompt_token_address() {
+  prompt_address 'Token address'
+}
+
+prompt_hold_fees() {
+  echo "Set hold fees to:"
+  select choice in enabled disabled; do
+    case "$choice" in
+      enabled)
+        EXTRA_ARGS=(true)
         break
         ;;
-      upgrade-router)
-        ACTION_LABEL='upgrade router'
-        SCRIPT_TARGET='script/admin/UpgradeRouter.s.sol:UpgradeRouter'
-        SIG=''
+      disabled)
+        EXTRA_ARGS=(false)
         break
         ;;
-      uniswapv2)
-        ACTION_LABEL='deploy uniswapv2 adapter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runUniswapV2(string)'
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+select_group() {
+  echo "Choose action group:"
+  select group in deploy upgrade admin inspect quit; do
+    case "$group" in
+      deploy)
+        select_deploy_action
         break
         ;;
-      uniswapv3)
-        ACTION_LABEL='deploy uniswapv3 adapter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runUniswapV3(string)'
+      upgrade)
+        select_upgrade_action
         break
         ;;
-      pancakev3)
-        ACTION_LABEL='deploy pancakev3 adapter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runPancakeV3(string)'
+      admin)
+        select_admin_action
         break
         ;;
-      kyber)
-        ACTION_LABEL='deploy kyber adapter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runKyberElastic(string)'
-        break
-        ;;
-      uniswapv4)
-        ACTION_LABEL='deploy uniswapv4 adapter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runUniswapV4(string)'
-        break
-        ;;
-      wnative)
-        ACTION_LABEL='deploy wnative adapter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runWNative(string)'
-        break
-        ;;
-      kuru)
-        ACTION_LABEL='deploy kuru adapter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runKuru(string)'
-        break
-        ;;
-      v3staticquoter)
-        ACTION_LABEL='deploy v3 static quoter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runUniswapV3StaticQuoter()'
+      inspect)
+        select_inspect_action
         break
         ;;
       quit) exit 0 ;;
@@ -101,11 +110,233 @@ select_component() {
   done
 }
 
+select_deploy_action() {
+  echo "Choose deploy action:"
+  select c in router uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru v3staticquoter back; do
+    case "$c" in
+      router)
+        reset_action_config
+        ACTION_LABEL='deploy router'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runRouter(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      uniswapv2)
+        reset_action_config
+        ACTION_LABEL='deploy uniswapv2 adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runUniswapV2(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      uniswapv3)
+        reset_action_config
+        ACTION_LABEL='deploy uniswapv3 adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runUniswapV3(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      pancakev3)
+        reset_action_config
+        ACTION_LABEL='deploy pancakev3 adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runPancakeV3(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      kyber)
+        reset_action_config
+        ACTION_LABEL='deploy kyber adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runKyberElastic(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      uniswapv4)
+        reset_action_config
+        ACTION_LABEL='deploy uniswapv4 adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runUniswapV4(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      wnative)
+        reset_action_config
+        ACTION_LABEL='deploy wnative adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runWNative(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      kuru)
+        reset_action_config
+        ACTION_LABEL='deploy kuru adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runKuru(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        break
+        ;;
+      v3staticquoter)
+        reset_action_config
+        ACTION_LABEL='deploy v3 static quoter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runUniswapV3StaticQuoter()'
+        MUTATES_STATE=1
+        break
+        ;;
+      back)
+        select_group
+        break
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+select_upgrade_action() {
+  echo "Choose upgrade action:"
+  select c in router back; do
+    case "$c" in
+      router)
+        reset_action_config
+        ACTION_LABEL='upgrade router'
+        SCRIPT_TARGET='script/admin/UpgradeRouter.s.sol:UpgradeRouter'
+        MUTATES_STATE=1
+        break
+        ;;
+      back)
+        select_group
+        break
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+select_admin_action() {
+  echo "Choose admin action:"
+  select c in router-fee-status router-native-balance router-token-balance router-set-hold-fees router-set-fee-claimer router-claim-fees update-adapters update-hop-tokens manage-uniswapv4-pools back; do
+    case "$c" in
+      router-fee-status)
+        reset_action_config
+        ACTION_LABEL='show router fee settings'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runStatus()'
+        break
+        ;;
+      router-native-balance)
+        reset_action_config
+        ACTION_LABEL='show router native balance'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runNativeBalance()'
+        break
+        ;;
+      router-token-balance)
+        reset_action_config
+        ACTION_LABEL='show router token balance'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runTokenBalance(address)'
+        EXTRA_ARGS=("$(prompt_token_address)")
+        break
+        ;;
+      router-set-hold-fees)
+        reset_action_config
+        ACTION_LABEL='update router hold fees flag'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetHoldFees(bool)'
+        MUTATES_STATE=1
+        prompt_hold_fees
+        break
+        ;;
+      router-set-fee-claimer)
+        reset_action_config
+        ACTION_LABEL='update router fee claimer'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetFeeClaimer(address)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_address 'New fee claimer address')")
+        break
+        ;;
+      router-claim-fees)
+        reset_action_config
+        ACTION_LABEL='claim router fees'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runClaimFees(address,address,uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_address 'Fee token address (use 0x0000000000000000000000000000000000000000 for native)')"
+          "$(prompt_address 'Recipient address')"
+          "$(prompt_uint 'Amount in token base units')"
+        )
+        break
+        ;;
+      update-adapters)
+        reset_action_config
+        ACTION_LABEL='sync router adapters'
+        SCRIPT_TARGET='script/admin/UpdateAdapters.s.sol:UpdateAdapters'
+        MUTATES_STATE=1
+        break
+        ;;
+      update-hop-tokens)
+        reset_action_config
+        ACTION_LABEL='sync router hop tokens'
+        SCRIPT_TARGET='script/admin/UpdateHopTokens.s.sol:UpdateHopTokens'
+        MUTATES_STATE=1
+        break
+        ;;
+      manage-uniswapv4-pools)
+        reset_action_config
+        ACTION_LABEL='sync uniswapv4 pools'
+        SCRIPT_TARGET='script/admin/ManageUniswapV4Pools.s.sol:ManageUniswapV4Pools'
+        MUTATES_STATE=1
+        break
+        ;;
+      back)
+        select_group
+        break
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+select_inspect_action() {
+  echo "Choose inspect action:"
+  select c in list-adapters back; do
+    case "$c" in
+      list-adapters)
+        reset_action_config
+        ACTION_LABEL='list router adapters'
+        SCRIPT_TARGET='script/admin/ListAdapters.s.sol:ListAdapters'
+        break
+        ;;
+      back)
+        select_group
+        break
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
 confirm_broadcast() {
+  if [[ "$MUTATES_STATE" -eq 0 ]]; then
+    return
+  fi
+
   read -r -p "Broadcast transaction? [y/N]: " yn
   case "$yn" in
     [Yy]*)
-      BROADCAST='--broadcast'
       PK_VAR="${PREFIX}_PK_DEPLOYER"
       DEPLOYER_PK="${!PK_VAR:-}"
       if [[ -z "$DEPLOYER_PK" ]]; then
@@ -113,33 +344,42 @@ confirm_broadcast() {
         exit 1
       fi
       ;;
-    *) BROADCAST='' ;;
+    *) DEPLOYER_PK='' ;;
   esac
 }
 
 main() {
   cd "$ROOT_DIR"
   load_env
-  select_network
-  select_component
-  confirm_broadcast
 
-  echo "Running $ACTION_LABEL for $PREFIX on rpc alias '$RPC_ALIAS'"
-  CMD=(forge script "$SCRIPT_TARGET" --rpc-url "$RPC_ALIAS")
+  while true; do
+    reset_action_config
+    select_network
+    select_group
+    confirm_broadcast
 
-  if [[ -n "$SIG" ]]; then
-    CMD+=(--sig "$SIG")
-  fi
+    echo "Running $ACTION_LABEL for $PREFIX on rpc alias '$RPC_ALIAS'"
+    CMD=(forge script "$SCRIPT_TARGET" --rpc-url "$RPC_ALIAS")
 
-  if [[ "$SIG" == *"(string)"* ]]; then
-    CMD+=("$PREFIX")
-  fi
+    if [[ -n "$SIG" ]]; then
+      CMD+=(--sig "$SIG")
+    fi
 
-  if [[ -n "$BROADCAST" ]]; then
-    CMD+=(--private-key "$DEPLOYER_PK" --broadcast)
-  fi
+    if [[ "$NEEDS_PREFIX" -eq 1 ]]; then
+      CMD+=("$PREFIX")
+    fi
 
-  "${CMD[@]}"
+    if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
+      CMD+=("${EXTRA_ARGS[@]}")
+    fi
+
+    if [[ -n "$DEPLOYER_PK" ]]; then
+      CMD+=(--private-key "$DEPLOYER_PK" --broadcast)
+    fi
+
+    "${CMD[@]}"
+    echo
+  done
 }
 
 main "$@"

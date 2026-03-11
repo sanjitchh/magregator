@@ -33,6 +33,8 @@ interface IMoksaRouter {
     event UpdatedAdapters(address[] _newAdapters);
     event UpdatedMinFee(uint256 _oldMinFee, uint256 _newMinFee);
     event UpdatedFeeClaimer(address _oldFeeClaimer, address _newFeeClaimer);
+    event UpdatedHoldFees(bool _oldHoldFees, bool _newHoldFees);
+    event FeesClaimed(address indexed _token, address indexed _to, uint256 _amount);
     event MoksaSwap(address indexed _tokenIn, address indexed _tokenOut, uint256 _amountIn, uint256 _amountOut);
 
     // admin
@@ -40,6 +42,8 @@ interface IMoksaRouter {
     function setAdapters(address[] memory _adapters) external;
     function setFeeClaimer(address _claimer) external;
     function setMinFee(uint256 _fee) external;
+    function setHoldFees(bool _holdFees) external;
+    function claimFees(address _token, address _to, uint256 _amount) external;
 
     // misc
     function trustedTokensCount() external view returns (uint256);

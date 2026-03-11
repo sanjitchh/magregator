@@ -26,6 +26,7 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
     address public FEE_CLAIMER;
     address[] public TRUSTED_TOKENS;
     address[] public ADAPTERS;
+    bool public HOLD_FEES;
 
     constructor() {
         _disableInitializers();
@@ -73,6 +74,24 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
     function setFeeClaimer(address _claimer) override public onlyMaintainer {
         emit UpdatedFeeClaimer(FEE_CLAIMER, _claimer);
         FEE_CLAIMER = _claimer;
+    }
+
+    function setHoldFees(bool _holdFees) override external onlyMaintainer {
+        emit UpdatedHoldFees(HOLD_FEES, _holdFees);
+        HOLD_FEES = _holdFees;
+    }
+
+    function claimFees(address _token, address _to, uint256 _amount) override external onlyMaintainer {
+        require(_to != address(0), "MoksaRouter: Invalid recipient");
+        require(_amount > 0, "MoksaRouter: Nothing to claim");
+
+        if (_token == NATIVE) {
+            payable(_to).transfer(_amount);
+        } else {
+            IERC20(_token).safeTransfer(_to, _amount);
+        }
+
+        emit FeesClaimed(_token, _to, _amount);
     }
 
     //  -- GENERAL --
@@ -327,7 +346,8 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         if (_fee > 0 || MIN_FEE > 0) {
             // Transfer fees to the claimer account and decrease initial amount
             amounts[0] = _applyFee(_trade.amountIn, _fee);
-            _transferFrom(_trade.path[0], _from, FEE_CLAIMER, _trade.amountIn - amounts[0]);
+            address feeRecipient = HOLD_FEES ? address(this) : FEE_CLAIMER;
+            _transferFrom(_trade.path[0], _from, feeRecipient, _trade.amountIn - amounts[0]);
         } else {
             amounts[0] = _trade.amountIn;
         }
