@@ -94,9 +94,15 @@ The interactive script now includes dedicated router fee operations under `admin
 - `router-fee-status`
 - `router-native-balance`
 - `router-token-balance`
+- `router-fee-usd-value`
 - `router-set-hold-fees`
 - `router-set-fee-claimer`
+- `router-set-deployer-redeemer`
+- `router-set-special-enabled`
+- `router-set-special-cap-usd`
+- `router-set-price-feed`
 - `router-claim-fees`
+- `router-claim-special-fees`
 
 These actions are backed by `script/admin/ManageRouterFees.s.sol`.
 
@@ -114,6 +120,28 @@ forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --broadcast
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
+  --sig "runSetDeployerRedeemer(address)" \
+  0xYourDeployerRedeemer \
+  --rpc-url monad \
+  --private-key "$MONAD_PK_DEPLOYER" \
+  --broadcast
+
+forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
+  --sig "runSetSpecialRedeemCapUsdWhole(uint256)" \
+  50000 \
+  --rpc-url monad \
+  --private-key "$MONAD_PK_DEPLOYER" \
+  --broadcast
+
+forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
+  --sig "runSetFeePriceFeed(address,address)" \
+  0xYourFeeToken \
+  0xYourUsdPriceFeed \
+  --rpc-url monad \
+  --private-key "$MONAD_PK_DEPLOYER" \
+  --broadcast
+
+forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --sig "runTokenBalance(address)" \
   0xYourToken \
   --rpc-url monad
@@ -126,6 +154,14 @@ forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
   --broadcast
+
+forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
+  --sig "runClaimSpecialFees(address,uint256)" \
+  0xYourFeeToken \
+  1000000 \
+  --rpc-url monad \
+  --private-key "$MONAD_PK_DEPLOYER" \
+  --broadcast
 ```
 
 Notes:
@@ -134,13 +170,34 @@ Notes:
 - For native-entry swaps, retained fees are usually held as wrapped native in the router.
 - Use `router-token-balance` for ERC20 balances and `router-native-balance` for raw native balance.
 
+### Special deployer redeem bucket
+
+The router now supports an accrual-based special fee bucket:
+
+- While the first `$50,000` of configured fee tokens is being accrued, those fees stay in the router.
+- That reserved bucket can only be redeemed by the configured deployer redeemer.
+- Once the `$50,000` cap has been fully accrued, new fees go directly to `FEE_CLAIMER`.
+- Tokens without a configured USD price feed bypass the special bucket and go straight to `FEE_CLAIMER`.
+
+The USD accounting uses 8 decimals internally. For example, `$50,000` is stored as `5000000000000`.
+
+Recommended setup order:
+
+1. `upgrade -> router`
+2. `admin -> router-set-fee-claimer`
+3. `admin -> router-set-deployer-redeemer`
+4. `admin -> router-set-special-cap-usd`
+5. `admin -> router-set-special-enabled`
+6. `admin -> router-set-price-feed` for every fee token that should count toward the special bucket
+7. Optional: `admin -> router-fee-usd-value` to verify feed configuration
+
 ### Router upgrade + fee hold enable flow
 
 To enable retained router fees on an existing deployment:
 
 1. Run `upgrade -> router` from `./script/deploy/interactive.sh`
-2. Run `admin -> router-set-hold-fees`
-3. Later, run `admin -> router-claim-fees` to move accrued balances out
+2. Run `admin -> router-set-hold-fees` for legacy fee holding, or configure the special deployer redeem bucket if you want accrual-based routing
+3. Later, run `admin -> router-claim-fees` or `admin -> router-claim-special-fees` as needed
 
 ## Admin scripts
 

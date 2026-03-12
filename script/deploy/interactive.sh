@@ -84,6 +84,27 @@ prompt_hold_fees() {
   done
 }
 
+prompt_special_redeem_enabled() {
+  echo "Set special redeem to:"
+  select choice in enabled disabled; do
+    case "$choice" in
+      enabled)
+        EXTRA_ARGS=(true)
+        break
+        ;;
+      disabled)
+        EXTRA_ARGS=(false)
+        break
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+prompt_whole_usd() {
+  prompt_uint 'USD amount in whole dollars'
+}
+
 select_group() {
   echo "Choose action group:"
   select group in deploy upgrade admin inspect quit; do
@@ -225,7 +246,7 @@ select_upgrade_action() {
 
 select_admin_action() {
   echo "Choose admin action:"
-  select c in router-fee-status router-native-balance router-token-balance router-set-hold-fees router-set-fee-claimer router-claim-fees update-adapters update-hop-tokens manage-uniswapv4-pools back; do
+  select c in router-fee-status router-native-balance router-token-balance router-fee-usd-value router-set-hold-fees router-set-fee-claimer router-set-deployer-redeemer router-set-special-enabled router-set-special-cap-usd router-set-price-feed router-claim-fees router-claim-special-fees update-adapters update-hop-tokens manage-uniswapv4-pools back; do
     case "$c" in
       router-fee-status)
         reset_action_config
@@ -249,6 +270,17 @@ select_admin_action() {
         EXTRA_ARGS=("$(prompt_token_address)")
         break
         ;;
+      router-fee-usd-value)
+        reset_action_config
+        ACTION_LABEL='show router fee usd value'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runFeeUsdValue(address,uint256)'
+        EXTRA_ARGS=(
+          "$(prompt_token_address)"
+          "$(prompt_uint 'Token amount in base units')"
+        )
+        break
+        ;;
       router-set-hold-fees)
         reset_action_config
         ACTION_LABEL='update router hold fees flag'
@@ -267,6 +299,45 @@ select_admin_action() {
         EXTRA_ARGS=("$(prompt_address 'New fee claimer address')")
         break
         ;;
+      router-set-deployer-redeemer)
+        reset_action_config
+        ACTION_LABEL='update deployer redeemer'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetDeployerRedeemer(address)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_address 'New deployer redeemer address')")
+        break
+        ;;
+      router-set-special-enabled)
+        reset_action_config
+        ACTION_LABEL='update special redeem mode'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetSpecialRedeemEnabled(bool)'
+        MUTATES_STATE=1
+        prompt_special_redeem_enabled
+        break
+        ;;
+      router-set-special-cap-usd)
+        reset_action_config
+        ACTION_LABEL='update special redeem cap usd'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetSpecialRedeemCapUsdWhole(uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_whole_usd)")
+        break
+        ;;
+      router-set-price-feed)
+        reset_action_config
+        ACTION_LABEL='update fee token price feed'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetFeePriceFeed(address,address)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_token_address)"
+          "$(prompt_address 'USD price feed address')"
+        )
+        break
+        ;;
       router-claim-fees)
         reset_action_config
         ACTION_LABEL='claim router fees'
@@ -276,6 +347,18 @@ select_admin_action() {
         EXTRA_ARGS=(
           "$(prompt_address 'Fee token address (use 0x0000000000000000000000000000000000000000 for native)')"
           "$(prompt_address 'Recipient address')"
+          "$(prompt_uint 'Amount in token base units')"
+        )
+        break
+        ;;
+      router-claim-special-fees)
+        reset_action_config
+        ACTION_LABEL='claim special router fees'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runClaimSpecialFees(address,uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_token_address)"
           "$(prompt_uint 'Amount in token base units')"
         )
         break

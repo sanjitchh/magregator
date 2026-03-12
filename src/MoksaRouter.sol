@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "./interface/IMoksaRouter.sol";
 import "./interface/IAdapter.sol";
 import "./interface/IERC20.sol";
+import "./interface/IAggregatorV3.sol";
 import "./interface/IWETH.sol";
 import "./lib/SafeERC20.sol";
 import "./lib/Maintainable.sol";
@@ -27,6 +28,15 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
     address[] public TRUSTED_TOKENS;
     address[] public ADAPTERS;
     bool public HOLD_FEES;
+    address public DEPLOYER_REDEEMER;
+    bool public SPECIAL_REDEEM_ENABLED;
+    uint256 public SPECIAL_REDEEM_CAP_USD;
+    uint256 public specialAccruedUsd;
+    uint256 public specialRedeemedUsd;
+    uint256 public PRICE_FEED_STALENESS = 1 days;
+    mapping(address => address) public FEE_PRICE_FEEDS;
+    mapping(address => uint256) public SPECIAL_RESERVED_FEES;
+    mapping(address => uint256) public SPECIAL_RESERVED_USD;
 
     constructor() {
         _disableInitializers();
@@ -81,9 +91,36 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         HOLD_FEES = _holdFees;
     }
 
+    function setDeployerRedeemer(address _deployerRedeemer) override external onlyMaintainer {
+        emit UpdatedDeployerRedeemer(DEPLOYER_REDEEMER, _deployerRedeemer);
+        DEPLOYER_REDEEMER = _deployerRedeemer;
+    }
+
+    function setSpecialRedeemEnabled(bool _specialRedeemEnabled) override external onlyMaintainer {
+        emit UpdatedSpecialRedeemEnabled(SPECIAL_REDEEM_ENABLED, _specialRedeemEnabled);
+        SPECIAL_REDEEM_ENABLED = _specialRedeemEnabled;
+    }
+
+    function setSpecialRedeemCapUsd(uint256 _specialRedeemCapUsd) override external onlyMaintainer {
+        emit UpdatedSpecialRedeemCapUsd(SPECIAL_REDEEM_CAP_USD, _specialRedeemCapUsd);
+        SPECIAL_REDEEM_CAP_USD = _specialRedeemCapUsd;
+    }
+
+    function setFeePriceFeed(address _token, address _priceFeed) override external onlyMaintainer {
+        emit UpdatedFeePriceFeed(_token, FEE_PRICE_FEEDS[_token], _priceFeed);
+        FEE_PRICE_FEEDS[_token] = _priceFeed;
+    }
+
+    function setPriceFeedStaleness(uint256 _priceFeedStaleness) override external onlyMaintainer {
+        require(_priceFeedStaleness > 0, "MoksaRouter: Invalid staleness");
+        emit UpdatedPriceFeedStaleness(PRICE_FEED_STALENESS, _priceFeedStaleness);
+        PRICE_FEED_STALENESS = _priceFeedStaleness;
+    }
+
     function claimFees(address _token, address _to, uint256 _amount) override external onlyMaintainer {
         require(_to != address(0), "MoksaRouter: Invalid recipient");
         require(_amount > 0, "MoksaRouter: Nothing to claim");
+        require(_amount <= _availableClaimableAmount(_token), "MoksaRouter: Reserved special fees");
 
         if (_token == NATIVE) {
             payable(_to).transfer(_amount);
@@ -92,6 +129,39 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         }
 
         emit FeesClaimed(_token, _to, _amount);
+    }
+
+    function claimSpecialFees(address _token, uint256 _amount) override external {
+        require(msg.sender == DEPLOYER_REDEEMER, "MoksaRouter: Caller is not deployer redeemer");
+        require(_amount > 0, "MoksaRouter: Nothing to claim");
+
+        uint256 reservedAmount = SPECIAL_RESERVED_FEES[_token];
+        uint256 reservedUsd = SPECIAL_RESERVED_USD[_token];
+        require(_amount <= reservedAmount, "MoksaRouter: Exceeds reserved fees");
+
+        uint256 usdAmount = _amount == reservedAmount ? reservedUsd : (reservedUsd * _amount) / reservedAmount;
+
+        SPECIAL_RESERVED_FEES[_token] = reservedAmount - _amount;
+        SPECIAL_RESERVED_USD[_token] = reservedUsd - usdAmount;
+        specialRedeemedUsd += usdAmount;
+
+        IERC20(_token).safeTransfer(DEPLOYER_REDEEMER, _amount);
+
+        emit SpecialFeesClaimed(_token, DEPLOYER_REDEEMER, _amount, usdAmount);
+    }
+
+    function remainingSpecialRedeemUsd() override external view returns (uint256) {
+        if (specialAccruedUsd >= SPECIAL_REDEEM_CAP_USD) {
+            return 0;
+        }
+
+        return SPECIAL_REDEEM_CAP_USD - specialAccruedUsd;
+    }
+
+    function getFeeUsdValue(address _token, uint256 _amount) override external view returns (uint256) {
+        (bool success, uint256 usdValue) = _tryGetFeeUsdValue(_token, _amount);
+        require(success, "MoksaRouter: Missing price feed");
+        return usdValue;
     }
 
     //  -- GENERAL --
@@ -156,6 +226,183 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
             IERC20(token).safeTransferFrom(_from, _to, _amount);
         else
             IERC20(token).safeTransfer(_to, _amount);
+    }
+
+    function _availableClaimableAmount(address _token) internal view returns (uint256) {
+        if (_token == NATIVE) {
+            return address(this).balance;
+        }
+
+        uint256 balance = IERC20(_token).balanceOf(address(this));
+        uint256 reserved = SPECIAL_RESERVED_FEES[_token];
+
+        if (reserved >= balance) {
+            return 0;
+        }
+
+        return balance - reserved;
+    }
+
+    function _isSpecialRedeemActive() internal view returns (bool) {
+        return SPECIAL_REDEEM_ENABLED && DEPLOYER_REDEEMER != address(0) && SPECIAL_REDEEM_CAP_USD > 0;
+    }
+
+    function _shouldUseSpecialRedeem(address _token) internal view returns (bool) {
+        return
+            _isSpecialRedeemActive() &&
+            specialAccruedUsd < SPECIAL_REDEEM_CAP_USD &&
+            FEE_PRICE_FEEDS[_token] != address(0);
+    }
+
+    function _collectFee(address _token, address _from, uint256 _feeAmount) internal {
+        if (_feeAmount == 0) {
+            return;
+        }
+
+        if (_isSpecialRedeemActive()) {
+            if (_shouldUseSpecialRedeem(_token)) {
+                _collectSpecialFee(_token, _from, _feeAmount);
+            } else {
+                _transferFrom(_token, _from, FEE_CLAIMER, _feeAmount);
+            }
+
+            return;
+        }
+
+        if (_shouldUseSpecialRedeem(_token)) {
+            _collectSpecialFee(_token, _from, _feeAmount);
+            return;
+        }
+
+        address feeRecipient = HOLD_FEES ? address(this) : FEE_CLAIMER;
+        _transferFrom(_token, _from, feeRecipient, _feeAmount);
+    }
+
+    function _collectSpecialFee(address _token, address _from, uint256 _feeAmount) internal {
+        uint256 remainingUsd = SPECIAL_REDEEM_CAP_USD - specialAccruedUsd;
+        (bool success, uint256 feeUsdValue) = _tryGetFeeUsdValue(_token, _feeAmount);
+
+        if (!success || feeUsdValue == 0) {
+            _transferFrom(_token, _from, FEE_CLAIMER, _feeAmount);
+            return;
+        }
+
+        if (feeUsdValue <= remainingUsd) {
+            _transferFrom(_token, _from, address(this), _feeAmount);
+            SPECIAL_RESERVED_FEES[_token] += _feeAmount;
+            SPECIAL_RESERVED_USD[_token] += feeUsdValue;
+            specialAccruedUsd += feeUsdValue;
+            emit SpecialFeesReserved(_token, _feeAmount, feeUsdValue);
+            return;
+        }
+
+        (bool amountSuccess, uint256 reservedAmount) = _tryGetTokenAmountForUsd(_token, remainingUsd);
+
+        if (!amountSuccess || reservedAmount == 0) {
+            specialAccruedUsd = SPECIAL_REDEEM_CAP_USD;
+            _transferFrom(_token, _from, FEE_CLAIMER, _feeAmount);
+            return;
+        }
+
+        if (reservedAmount > _feeAmount) {
+            reservedAmount = _feeAmount;
+        }
+
+        uint256 reservedUsd = _amountToUsdValue(_token, reservedAmount);
+        uint256 remainder = _feeAmount - reservedAmount;
+
+        _transferFrom(_token, _from, address(this), reservedAmount);
+        SPECIAL_RESERVED_FEES[_token] += reservedAmount;
+        SPECIAL_RESERVED_USD[_token] += reservedUsd;
+        specialAccruedUsd += reservedUsd;
+        emit SpecialFeesReserved(_token, reservedAmount, reservedUsd);
+
+        if (remainder > 0) {
+            _transferFrom(_token, _from, FEE_CLAIMER, remainder);
+        }
+
+        if (specialAccruedUsd >= SPECIAL_REDEEM_CAP_USD || SPECIAL_REDEEM_CAP_USD - specialAccruedUsd <= 1) {
+            specialAccruedUsd = SPECIAL_REDEEM_CAP_USD;
+        }
+    }
+
+    function _amountToUsdValue(address _token, uint256 _amount) internal view returns (uint256) {
+        (, uint256 usdValue) = _tryGetFeeUsdValue(_token, _amount);
+        return usdValue;
+    }
+
+    function _tryGetFeeUsdValue(address _token, uint256 _amount) internal view returns (bool, uint256) {
+        if (_amount == 0) {
+            return (true, 0);
+        }
+
+        address priceFeed = FEE_PRICE_FEEDS[_token];
+        if (priceFeed == address(0)) {
+            return (false, 0);
+        }
+
+        try IAggregatorV3(priceFeed).latestRoundData() returns (
+            uint80 roundId,
+            int256 answer,
+            uint256,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) {
+            if (answer <= 0 || answeredInRound < roundId || updatedAt == 0 || block.timestamp - updatedAt > PRICE_FEED_STALENESS) {
+                return (false, 0);
+            }
+
+            try IAggregatorV3(priceFeed).decimals() returns (uint8 feedDecimals) {
+                uint256 scaledPrice = _scaleValue(uint256(answer), feedDecimals, 8);
+                uint8 tokenDecimals = IERC20(_token).decimals();
+                return (true, (_amount * scaledPrice) / (10 ** tokenDecimals));
+            } catch {
+                return (false, 0);
+            }
+        } catch {
+            return (false, 0);
+        }
+    }
+
+    function _tryGetTokenAmountForUsd(address _token, uint256 _usdAmount) internal view returns (bool, uint256) {
+        address priceFeed = FEE_PRICE_FEEDS[_token];
+        if (priceFeed == address(0)) {
+            return (false, 0);
+        }
+
+        try IAggregatorV3(priceFeed).latestRoundData() returns (
+            uint80 roundId,
+            int256 answer,
+            uint256,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) {
+            if (answer <= 0 || answeredInRound < roundId || updatedAt == 0 || block.timestamp - updatedAt > PRICE_FEED_STALENESS) {
+                return (false, 0);
+            }
+
+            try IAggregatorV3(priceFeed).decimals() returns (uint8 feedDecimals) {
+                uint256 scaledPrice = _scaleValue(uint256(answer), feedDecimals, 8);
+                uint8 tokenDecimals = IERC20(_token).decimals();
+                return (true, (_usdAmount * (10 ** tokenDecimals)) / scaledPrice);
+            } catch {
+                return (false, 0);
+            }
+        } catch {
+            return (false, 0);
+        }
+    }
+
+    function _scaleValue(uint256 _value, uint8 _fromDecimals, uint8 _toDecimals) internal pure returns (uint256) {
+        if (_fromDecimals == _toDecimals) {
+            return _value;
+        }
+
+        if (_fromDecimals < _toDecimals) {
+            return _value * (10 ** (_toDecimals - _fromDecimals));
+        }
+
+        return _value / (10 ** (_fromDecimals - _toDecimals));
     }
     
     // -- QUERIES --
@@ -346,8 +593,7 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         if (_fee > 0 || MIN_FEE > 0) {
             // Transfer fees to the claimer account and decrease initial amount
             amounts[0] = _applyFee(_trade.amountIn, _fee);
-            address feeRecipient = HOLD_FEES ? address(this) : FEE_CLAIMER;
-            _transferFrom(_trade.path[0], _from, feeRecipient, _trade.amountIn - amounts[0]);
+            _collectFee(_trade.path[0], _from, _trade.amountIn - amounts[0]);
         } else {
             amounts[0] = _trade.amountIn;
         }
