@@ -87,6 +87,19 @@ Typical flow:
 
 If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEPLOYER` in `.env`.
 
+Fresh router deployments also pick up optional special-fee settings from `.env` automatically. Supported keys are:
+
+- `<PREFIX>_DEPLOYER_REDEEMER`
+- `<PREFIX>_ROUTER_HOLD_FEES`
+- `<PREFIX>_SPECIAL_REDEEM_ENABLED`
+- `<PREFIX>_SPECIAL_REDEEM_CAP_USD` (8 decimals, so `$50,000` = `5000000000000`)
+- `<PREFIX>_PRICE_FEED_STALENESS`
+- `<PREFIX>_ROUTER_FEE_PRICE_FEED_COUNT`
+- `<PREFIX>_ROUTER_FEE_PRICE_FEED_TOKEN_<INDEX>`
+- `<PREFIX>_ROUTER_FEE_PRICE_FEED_<INDEX>`
+
+That means new router deployments can come up preconfigured without requiring separate post-deploy admin transactions.
+
 ### Router fee management
 
 The interactive script now includes dedicated router fee operations under `admin`:
@@ -101,6 +114,7 @@ The interactive script now includes dedicated router fee operations under `admin
 - `router-set-special-enabled`
 - `router-set-special-cap-usd`
 - `router-set-price-feed`
+- `router-set-price-feed-staleness`
 - `router-claim-fees`
 - `router-claim-special-fees`
 

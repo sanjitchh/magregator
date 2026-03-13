@@ -31,6 +31,7 @@ contract DeployUpgradeable is Script {
             (adapters, trustedTokens, feeClaimer, wrappedNative, maintainer)
         );
         address proxy = _deployProxy(implementation, initData);
+        _configureRouter(prefix, MoksaRouter(payable(proxy)));
 
         console.log("MoksaRouter implementation:", implementation);
         console.log("MoksaRouter proxy:", proxy);
@@ -209,6 +210,50 @@ contract DeployUpgradeable is Script {
     function _deployProxy(address implementation, bytes memory initData) internal returns (address) {
         ERC1967Proxy proxy = new ERC1967Proxy(implementation, initData);
         return address(proxy);
+    }
+
+    function _configureRouter(string calldata prefix, MoksaRouter router) internal {
+        address deployerRedeemer = vm.envOr(_key(prefix, "DEPLOYER_REDEEMER"), address(0));
+        if (deployerRedeemer != address(0)) {
+            router.setDeployerRedeemer(deployerRedeemer);
+        }
+
+        uint256 minFee = vm.envOr(_key(prefix, "ROUTER_MIN_FEE"), uint256(0));
+        if (minFee > 0) {
+            router.setMinFee(minFee);
+        }
+
+        bool holdFees = vm.envOr(_key(prefix, "ROUTER_HOLD_FEES"), false);
+        if (holdFees) {
+            router.setHoldFees(true);
+        }
+
+        uint256 specialRedeemCapUsd = vm.envOr(_key(prefix, "SPECIAL_REDEEM_CAP_USD"), uint256(0));
+        if (specialRedeemCapUsd > 0) {
+            router.setSpecialRedeemCapUsd(specialRedeemCapUsd);
+        }
+
+        uint256 priceFeedStaleness = vm.envOr(_key(prefix, "PRICE_FEED_STALENESS"), uint256(0));
+        if (priceFeedStaleness > 0) {
+            router.setPriceFeedStaleness(priceFeedStaleness);
+        }
+
+        _configureRouterPriceFeeds(prefix, router);
+
+        bool specialRedeemEnabled = vm.envOr(_key(prefix, "SPECIAL_REDEEM_ENABLED"), false);
+        if (specialRedeemEnabled) {
+            router.setSpecialRedeemEnabled(true);
+        }
+    }
+
+    function _configureRouterPriceFeeds(string calldata prefix, MoksaRouter router) internal {
+        uint256 count = vm.envOr(_key(prefix, "ROUTER_FEE_PRICE_FEED_COUNT"), uint256(0));
+
+        for (uint256 i = 0; i < count; i++) {
+            address token = vm.envAddress(string.concat(_key(prefix, "ROUTER_FEE_PRICE_FEED_TOKEN"), "_", vm.toString(i)));
+            address feed = vm.envAddress(string.concat(_key(prefix, "ROUTER_FEE_PRICE_FEED"), "_", vm.toString(i)));
+            router.setFeePriceFeed(token, feed);
+        }
     }
 
     function _key(string memory prefix, string memory suffix) internal pure returns (string memory) {

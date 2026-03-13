@@ -246,7 +246,7 @@ select_upgrade_action() {
 
 select_admin_action() {
   echo "Choose admin action:"
-  select c in router-fee-status router-native-balance router-token-balance router-fee-usd-value router-set-hold-fees router-set-fee-claimer router-set-deployer-redeemer router-set-special-enabled router-set-special-cap-usd router-set-price-feed router-claim-fees router-claim-special-fees update-adapters update-hop-tokens manage-uniswapv4-pools back; do
+  select c in router-fee-status router-native-balance router-token-balance router-fee-usd-value router-set-hold-fees router-set-fee-claimer router-set-deployer-redeemer router-set-special-enabled router-set-special-cap-usd router-set-price-feed router-set-price-feed-staleness router-claim-fees router-claim-special-fees update-adapters update-hop-tokens manage-uniswapv4-pools back; do
     case "$c" in
       router-fee-status)
         reset_action_config
@@ -336,6 +336,15 @@ select_admin_action() {
           "$(prompt_token_address)"
           "$(prompt_address 'USD price feed address')"
         )
+        break
+        ;;
+      router-set-price-feed-staleness)
+        reset_action_config
+        ACTION_LABEL='update price feed staleness'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetPriceFeedStaleness(uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_uint 'Price feed staleness in seconds')")
         break
         ;;
       router-claim-fees)
