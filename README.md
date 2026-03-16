@@ -219,6 +219,12 @@ These scripts now work for any supported network via `DeploymentFactory`:
 
 ```bash
 forge script script/admin/ListAdapters.s.sol --rpc-url sepolia
+forge script script/admin/CheckAdapterQuotes.s.sol:CheckAdapterQuotes \
+  --sig "runPair(address,address,uint256)" \
+  0xfff9976782d46cc05630d1f6ebab18b2324d6b14 \
+  0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238 \
+  1000000000000000000 \
+  --rpc-url sepolia
 forge script script/admin/UpgradeRouter.s.sol --rpc-url sepolia --broadcast
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees --sig "runStatus()" --rpc-url sepolia
 forge script script/admin/UpdateAdapters.s.sol --account deployer --rpc-url sepolia --broadcast
