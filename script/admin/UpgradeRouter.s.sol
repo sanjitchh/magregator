@@ -13,15 +13,17 @@ contract UpgradeRouter is Script {
         INetworkDeployments deployments = factory.getDeployments();
 
         address routerProxy = deployments.getRouter();
+        uint256 upgradeGasLimit = vm.envOr("ROUTER_UPGRADE_GAS_LIMIT", uint256(200_000));
         require(routerProxy != address(0), "UpgradeRouter: router not configured");
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router proxy:", routerProxy);
+        console.log("Upgrade gas limit:", upgradeGasLimit);
 
         vm.startBroadcast();
 
         address newImplementation = address(new MoksaRouter());
-        MoksaRouter(payable(routerProxy)).upgradeTo(newImplementation);
+        MoksaRouter(payable(routerProxy)).upgradeTo{gas: upgradeGasLimit}(newImplementation);
 
         vm.stopBroadcast();
 
