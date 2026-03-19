@@ -128,26 +128,6 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         COMPANY_FEE_CAP_USD = _companyFeeCapUsd;
     }
 
-    // Deprecated legacy toggle retained for storage compatibility.
-    function setHoldFees(bool _holdFees) external onlyMaintainer {
-        HOLD_FEES = _holdFees;
-    }
-
-    // Deprecated legacy setter retained for storage compatibility.
-    function setDeployerRedeemer(address _deployerRedeemer) external onlyMaintainer {
-        DEPLOYER_REDEEMER = _deployerRedeemer;
-    }
-
-    // Deprecated legacy setter retained for storage compatibility.
-    function setSpecialRedeemEnabled(bool _specialRedeemEnabled) external onlyMaintainer {
-        SPECIAL_REDEEM_ENABLED = _specialRedeemEnabled;
-    }
-
-    // Deprecated legacy setter retained for storage compatibility.
-    function setSpecialRedeemCapUsd(uint256 _specialRedeemCapUsd) external onlyMaintainer {
-        SPECIAL_REDEEM_CAP_USD = _specialRedeemCapUsd;
-    }
-
     function setFeePriceFeed(address _token, address _priceFeed) override external onlyMaintainer {
         emit UpdatedFeePriceFeed(_token, FEE_PRICE_FEEDS[_token], _priceFeed);
         FEE_PRICE_FEEDS[_token] = _priceFeed;
@@ -157,16 +137,6 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         require(_priceFeedStaleness > 0, "MoksaRouter: Invalid staleness");
         emit UpdatedPriceFeedStaleness(PRICE_FEED_STALENESS, _priceFeedStaleness);
         PRICE_FEED_STALENESS = _priceFeedStaleness;
-    }
-
-    function claimFees(address _token, address _to, uint256 _amount) external onlyMaintainer {
-        require(_to != address(0), "MoksaRouter: Invalid recipient");
-        require(_amount > 0, "MoksaRouter: Nothing to claim");
-        require(_amount <= _availableClaimableAmount(_token), "MoksaRouter: Reserved fees");
-
-        _transferTokenOut(_token, _to, _amount);
-
-        emit ProtocolFeesClaimed(_token, _to, _amount);
     }
 
     function claimOperationsFees(address _token, uint256 _amount) override external onlyMaintainer {
@@ -200,32 +170,6 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         _transferTokenOut(_token, FEE_CLAIMER, _amount);
 
         emit ProtocolFeesClaimed(_token, FEE_CLAIMER, _amount);
-    }
-
-    // Deprecated legacy claim retained so old reserved balances can still be cleared.
-    function claimSpecialFees(address _token, uint256 _amount) external {
-        require(msg.sender == DEPLOYER_REDEEMER, "MoksaRouter: Caller is not deployer redeemer");
-        require(_amount > 0, "MoksaRouter: Nothing to claim");
-
-        uint256 reservedAmount = SPECIAL_RESERVED_FEES[_token];
-        uint256 reservedUsd = SPECIAL_RESERVED_USD[_token];
-        require(_amount <= reservedAmount, "MoksaRouter: Exceeds reserved fees");
-
-        uint256 usdAmount = _amount == reservedAmount ? reservedUsd : (reservedUsd * _amount) / reservedAmount;
-
-        SPECIAL_RESERVED_FEES[_token] = reservedAmount - _amount;
-        SPECIAL_RESERVED_USD[_token] = reservedUsd - usdAmount;
-        specialRedeemedUsd += usdAmount;
-
-        IERC20(_token).safeTransfer(DEPLOYER_REDEEMER, _amount);
-    }
-
-    function remainingSpecialRedeemUsd() external view returns (uint256) {
-        if (specialAccruedUsd >= SPECIAL_REDEEM_CAP_USD) {
-            return 0;
-        }
-
-        return SPECIAL_REDEEM_CAP_USD - specialAccruedUsd;
     }
 
     function remainingCompanyFeeCapUsd() override external view returns (uint256) {
@@ -304,32 +248,6 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
             IERC20(token).safeTransferFrom(_from, _to, _amount);
         else
             IERC20(token).safeTransfer(_to, _amount);
-    }
-
-    function _availableClaimableAmount(address _token) internal view returns (uint256) {
-        if (_token == NATIVE) {
-            uint256 nativeBalance = address(this).balance;
-            uint256 nativeReserved = _totalReservedFees(_token);
-
-            if (nativeReserved >= nativeBalance) {
-                return 0;
-            }
-
-            return nativeBalance - nativeReserved;
-        }
-
-        uint256 balance = IERC20(_token).balanceOf(address(this));
-        uint256 reserved = _totalReservedFees(_token);
-
-        if (reserved >= balance) {
-            return 0;
-        }
-
-        return balance - reserved;
-    }
-
-    function _totalReservedFees(address _token) internal view returns (uint256) {
-        return SPECIAL_RESERVED_FEES[_token] + OPERATIONS_RESERVED_FEES[_token] + COMPANY_RESERVED_FEES[_token] + PROTOCOL_RESERVED_FEES[_token];
     }
 
     function _transferTokenOut(address _token, address _to, uint256 _amount) internal {
