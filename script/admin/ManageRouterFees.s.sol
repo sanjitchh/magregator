@@ -14,15 +14,16 @@ contract ManageRouterFees is Script {
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
-        console.log("Fee claimer:", router.FEE_CLAIMER());
-        console.log("Hold fees:", router.HOLD_FEES());
+        console.log("Protocol fee claimer:", router.FEE_CLAIMER());
+        console.log("Company fee claimer:", router.COMPANY_FEE_CLAIMER());
+        console.log("Operations fee claimer:", router.OPERATIONS_FEE_CLAIMER());
         console.log("Min fee:", router.MIN_FEE());
-        console.log("Special redeem enabled:", router.SPECIAL_REDEEM_ENABLED());
-        console.log("Deployer redeemer:", router.DEPLOYER_REDEEMER());
-        console.log("Special redeem cap USD (8 decimals):", router.SPECIAL_REDEEM_CAP_USD());
-        console.log("Special accrued USD (8 decimals):", router.specialAccruedUsd());
-        console.log("Special redeemed USD (8 decimals):", router.specialRedeemedUsd());
-        console.log("Remaining special redeem USD (8 decimals):", router.remainingSpecialRedeemUsd());
+        console.log("Operations fee bps:", router.OPERATIONS_FEE_BPS());
+        console.log("Company pre-cap enabled:", router.COMPANY_PRE_CAP_ENABLED());
+        console.log("Company post-cap fee bps:", router.COMPANY_POST_CAP_FEE_BPS());
+        console.log("Company fee cap USD (8 decimals):", router.COMPANY_FEE_CAP_USD());
+        console.log("Company accrued USD (8 decimals):", router.companyAccruedUsd());
+        console.log("Remaining company cap USD (8 decimals):", router.remainingCompanyFeeCapUsd());
         console.log("Price feed staleness:", router.PRICE_FEED_STALENESS());
     }
 
@@ -41,23 +42,10 @@ contract ManageRouterFees is Script {
         console.log("Router:", address(router));
         console.log("Token:", token);
         console.log("Token balance:", IERC20(token).balanceOf(address(router)));
-        console.log("Reserved special token balance:", router.SPECIAL_RESERVED_FEES(token));
-        console.log("Reserved special USD (8 decimals):", router.SPECIAL_RESERVED_USD(token));
-    }
-
-    function runSetHoldFees(bool holdFees) external {
-        (INetworkDeployments deployments, MoksaRouter router) = _router();
-
-        console.log("Network:", deployments.getNetworkName());
-        console.log("Router:", address(router));
-        console.log("Current hold fees:", router.HOLD_FEES());
-        console.log("New hold fees:", holdFees);
-
-        vm.startBroadcast();
-        router.setHoldFees(holdFees);
-        vm.stopBroadcast();
-
-        console.log("Router hold fees updated successfully");
+        console.log("Operations reserved (fallback only):", router.OPERATIONS_RESERVED_FEES(token));
+        console.log("Company reserved:", router.COMPANY_RESERVED_FEES(token));
+        console.log("Protocol reserved:", router.PROTOCOL_RESERVED_FEES(token));
+        console.log("Legacy special reserved:", router.SPECIAL_RESERVED_FEES(token));
     }
 
     function runSetFeeClaimer(address feeClaimer) external {
@@ -65,60 +53,105 @@ contract ManageRouterFees is Script {
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
-        console.log("Current fee claimer:", router.FEE_CLAIMER());
-        console.log("New fee claimer:", feeClaimer);
+        console.log("Current protocol fee claimer:", router.FEE_CLAIMER());
+        console.log("New protocol fee claimer:", feeClaimer);
 
         vm.startBroadcast();
         router.setFeeClaimer(feeClaimer);
         vm.stopBroadcast();
 
-        console.log("Router fee claimer updated successfully");
+        console.log("Router protocol fee claimer updated successfully");
     }
 
-    function runSetDeployerRedeemer(address deployerRedeemer) external {
+    function runSetCompanyFeeClaimer(address companyFeeClaimer) external {
         (INetworkDeployments deployments, MoksaRouter router) = _router();
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
-        console.log("Current deployer redeemer:", router.DEPLOYER_REDEEMER());
-        console.log("New deployer redeemer:", deployerRedeemer);
+        console.log("Current company fee claimer:", router.COMPANY_FEE_CLAIMER());
+        console.log("New company fee claimer:", companyFeeClaimer);
 
         vm.startBroadcast();
-        router.setDeployerRedeemer(deployerRedeemer);
+        router.setCompanyFeeClaimer(companyFeeClaimer);
         vm.stopBroadcast();
 
-        console.log("Router deployer redeemer updated successfully");
+        console.log("Router company fee claimer updated successfully");
     }
 
-    function runSetSpecialRedeemEnabled(bool specialRedeemEnabled) external {
+    function runSetOperationsFeeClaimer(address operationsFeeClaimer) external {
         (INetworkDeployments deployments, MoksaRouter router) = _router();
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
-        console.log("Current special redeem enabled:", router.SPECIAL_REDEEM_ENABLED());
-        console.log("New special redeem enabled:", specialRedeemEnabled);
+        console.log("Current operations fee claimer:", router.OPERATIONS_FEE_CLAIMER());
+        console.log("New operations fee claimer:", operationsFeeClaimer);
 
         vm.startBroadcast();
-        router.setSpecialRedeemEnabled(specialRedeemEnabled);
+        router.setOperationsFeeClaimer(operationsFeeClaimer);
         vm.stopBroadcast();
 
-        console.log("Router special redeem mode updated successfully");
+        console.log("Router operations fee claimer updated successfully");
     }
 
-    function runSetSpecialRedeemCapUsdWhole(uint256 wholeUsd) external {
+    function runSetOperationsFeeBps(uint256 operationsFeeBps) external {
+        (INetworkDeployments deployments, MoksaRouter router) = _router();
+
+        console.log("Network:", deployments.getNetworkName());
+        console.log("Router:", address(router));
+        console.log("Current operations fee bps:", router.OPERATIONS_FEE_BPS());
+        console.log("New operations fee bps:", operationsFeeBps);
+
+        vm.startBroadcast();
+        router.setOperationsFeeBps(operationsFeeBps);
+        vm.stopBroadcast();
+
+        console.log("Router operations fee bps updated successfully");
+    }
+
+    function runSetCompanyPreCapEnabled(bool companyPreCapEnabled) external {
+        (INetworkDeployments deployments, MoksaRouter router) = _router();
+
+        console.log("Network:", deployments.getNetworkName());
+        console.log("Router:", address(router));
+        console.log("Current company pre-cap enabled:", router.COMPANY_PRE_CAP_ENABLED());
+        console.log("New company pre-cap enabled:", companyPreCapEnabled);
+
+        vm.startBroadcast();
+        router.setCompanyPreCapEnabled(companyPreCapEnabled);
+        vm.stopBroadcast();
+
+        console.log("Router company pre-cap flag updated successfully");
+    }
+
+    function runSetCompanyPostCapFeeBps(uint256 companyPostCapFeeBps) external {
+        (INetworkDeployments deployments, MoksaRouter router) = _router();
+
+        console.log("Network:", deployments.getNetworkName());
+        console.log("Router:", address(router));
+        console.log("Current company post-cap fee bps:", router.COMPANY_POST_CAP_FEE_BPS());
+        console.log("New company post-cap fee bps:", companyPostCapFeeBps);
+
+        vm.startBroadcast();
+        router.setCompanyPostCapFeeBps(companyPostCapFeeBps);
+        vm.stopBroadcast();
+
+        console.log("Router company post-cap fee bps updated successfully");
+    }
+
+    function runSetCompanyFeeCapUsdWhole(uint256 wholeUsd) external {
         (INetworkDeployments deployments, MoksaRouter router) = _router();
         uint256 capUsd = wholeUsd * 1e8;
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
-        console.log("Current special redeem cap USD (8 decimals):", router.SPECIAL_REDEEM_CAP_USD());
-        console.log("New special redeem cap USD (8 decimals):", capUsd);
+        console.log("Current company fee cap USD (8 decimals):", router.COMPANY_FEE_CAP_USD());
+        console.log("New company fee cap USD (8 decimals):", capUsd);
 
         vm.startBroadcast();
-        router.setSpecialRedeemCapUsd(capUsd);
+        router.setCompanyFeeCapUsd(capUsd);
         vm.stopBroadcast();
 
-        console.log("Router special redeem cap updated successfully");
+        console.log("Router company fee cap updated successfully");
     }
 
     function runSetFeePriceFeed(address token, address priceFeed) external {
@@ -152,36 +185,52 @@ contract ManageRouterFees is Script {
         console.log("Router price feed staleness updated successfully");
     }
 
-    function runClaimFees(address token, address to, uint256 amount) external {
+    function runClaimOperationsFees(address token, uint256 amount) external {
         (INetworkDeployments deployments, MoksaRouter router) = _router();
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
         console.log("Token:", token);
-        console.log("Recipient:", to);
+        console.log("Reserved operations balance (fallback only):", router.OPERATIONS_RESERVED_FEES(token));
         console.log("Amount:", amount);
 
         vm.startBroadcast();
-        router.claimFees(token, to, amount);
+        router.claimOperationsFees(token, amount);
         vm.stopBroadcast();
 
-        console.log("Router fees claimed successfully");
+        console.log("Router operations fees claimed successfully");
     }
 
-    function runClaimSpecialFees(address token, uint256 amount) external {
+    function runClaimCompanyFees(address token, uint256 amount) external {
         (INetworkDeployments deployments, MoksaRouter router) = _router();
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
         console.log("Token:", token);
-        console.log("Reserved token balance:", router.SPECIAL_RESERVED_FEES(token));
+        console.log("Reserved company balance (pre-cap or fallback only):", router.COMPANY_RESERVED_FEES(token));
         console.log("Amount:", amount);
 
         vm.startBroadcast();
-        router.claimSpecialFees(token, amount);
+        router.claimCompanyFees(token, amount);
         vm.stopBroadcast();
 
-        console.log("Router special fees claimed successfully");
+        console.log("Router company fees claimed successfully");
+    }
+
+    function runClaimProtocolFees(address token, uint256 amount) external {
+        (INetworkDeployments deployments, MoksaRouter router) = _router();
+
+        console.log("Network:", deployments.getNetworkName());
+        console.log("Router:", address(router));
+        console.log("Token:", token);
+        console.log("Reserved protocol balance (fallback only):", router.PROTOCOL_RESERVED_FEES(token));
+        console.log("Amount:", amount);
+
+        vm.startBroadcast();
+        router.claimProtocolFees(token, amount);
+        vm.stopBroadcast();
+
+        console.log("Router protocol fees claimed successfully");
     }
 
     function runFeeUsdValue(address token, uint256 amount) external {

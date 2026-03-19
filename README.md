@@ -87,12 +87,14 @@ Typical flow:
 
 If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEPLOYER` in `.env`.
 
-Fresh router deployments also pick up optional special-fee settings from `.env` automatically. Supported keys are:
+Fresh router deployments also pick up optional fee-accounting settings from `.env` automatically. Supported keys are:
 
-- `<PREFIX>_DEPLOYER_REDEEMER`
-- `<PREFIX>_ROUTER_HOLD_FEES`
-- `<PREFIX>_SPECIAL_REDEEM_ENABLED`
-- `<PREFIX>_SPECIAL_REDEEM_CAP_USD` (8 decimals, so `$50,000` = `5000000000000`)
+- `<PREFIX>_COMPANY_FEE_CLAIMER`
+- `<PREFIX>_OPERATIONS_FEE_CLAIMER`
+- `<PREFIX>_OPERATIONS_FEE_BPS`
+- `<PREFIX>_COMPANY_PRE_CAP_ENABLED`
+- `<PREFIX>_COMPANY_POST_CAP_FEE_BPS`
+- `<PREFIX>_COMPANY_FEE_CAP_USD` (8 decimals, so `$50,000` = `5000000000000`)
 - `<PREFIX>_PRICE_FEED_STALENESS`
 - `<PREFIX>_ROUTER_FEE_PRICE_FEED_COUNT`
 - `<PREFIX>_ROUTER_FEE_PRICE_FEED_TOKEN_<INDEX>`
@@ -108,15 +110,18 @@ The interactive script now includes dedicated router fee operations under `admin
 - `router-native-balance`
 - `router-token-balance`
 - `router-fee-usd-value`
-- `router-set-hold-fees`
 - `router-set-fee-claimer`
-- `router-set-deployer-redeemer`
-- `router-set-special-enabled`
-- `router-set-special-cap-usd`
+- `router-set-company-fee-claimer`
+- `router-set-operations-fee-claimer`
+- `router-set-operations-fee-bps`
+- `router-set-company-pre-cap-enabled`
+- `router-set-company-post-cap-fee-bps`
+- `router-set-company-fee-cap-usd`
 - `router-set-price-feed`
 - `router-set-price-feed-staleness`
-- `router-claim-fees`
-- `router-claim-special-fees`
+- `router-claim-operations-fees`
+- `router-claim-company-fees`
+- `router-claim-protocol-fees`
 
 These actions are backed by `script/admin/ManageRouterFees.s.sol`.
 
@@ -128,20 +133,20 @@ forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --rpc-url monad
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runSetHoldFees(bool)" true \
+  --sig "runSetOperationsFeeBps(uint256)" 500 \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
   --broadcast
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runSetDeployerRedeemer(address)" \
-  0xYourDeployerRedeemer \
+  --sig "runSetCompanyFeeClaimer(address)" \
+  0xYourCompanyFeeClaimer \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
   --broadcast
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runSetSpecialRedeemCapUsdWhole(uint256)" \
+  --sig "runSetCompanyFeeCapUsdWhole(uint256)" \
   50000 \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
@@ -161,16 +166,15 @@ forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --rpc-url monad
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runClaimFees(address,address,uint256)" \
-  0x0000000000000000000000000000000000000000 \
-  0xYourRecipient \
-  1000000000000000000 \
+  --sig "runClaimOperationsFees(address,uint256)" \
+  0xYourFeeToken \
+  1000000 \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
   --broadcast
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runClaimSpecialFees(address,uint256)" \
+  --sig "runClaimProtocolFees(address,uint256)" \
   0xYourFeeToken \
   1000000 \
   --rpc-url monad \
@@ -180,18 +184,19 @@ forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
 
 Notes:
 
-- Use the zero address as the token when claiming native fees.
 - For native-entry swaps, retained fees are usually held as wrapped native in the router.
-- Use `router-token-balance` for ERC20 balances and `router-native-balance` for raw native balance.
+- Use `router-token-balance` for ERC20 balances and bucket totals, and `router-native-balance` for raw native balance.
 
-### Special deployer redeem bucket
+### Router fee buckets
 
-The router now supports an accrual-based special fee bucket:
+The router now pays operations fees out immediately when `OPERATIONS_FEE_CLAIMER` is configured, and keeps the remaining fee inside the router in per-token buckets:
 
-- While the first `$50,000` of configured fee tokens is being accrued, those fees stay in the router.
-- That reserved bucket can only be redeemed by the configured deployer redeemer.
-- Once the `$50,000` cap has been fully accrued, new fees go directly to `FEE_CLAIMER`.
-- Tokens without a configured USD price feed bypass the special bucket and go straight to `FEE_CLAIMER`.
+- A configurable operations slice is paid out first to `OPERATIONS_FEE_CLAIMER`.
+- If `COMPANY_PRE_CAP_ENABLED` is on, then before the company USD cap is reached the remaining fee is reserved entirely for `COMPANY_FEE_CLAIMER`.
+- When pre-cap mode is off, or once the cap is reached, the remaining fee is split and paid out immediately between `COMPANY_FEE_CLAIMER` and `FEE_CLAIMER` using configurable basis points.
+- Tokens without a configured USD price feed still accrue token balances, but they do not advance the USD cap counter.
+- If `OPERATIONS_FEE_CLAIMER` is unset, the operations slice stays claimable from the router as a fallback.
+- If `COMPANY_FEE_CLAIMER` or `FEE_CLAIMER` is unset during immediate split payout, that share stays claimable from the router as a fallback.
 
 The USD accounting uses 8 decimals internally. For example, `$50,000` is stored as `5000000000000`.
 
@@ -199,19 +204,22 @@ Recommended setup order:
 
 1. `upgrade -> router`
 2. `admin -> router-set-fee-claimer`
-3. `admin -> router-set-deployer-redeemer`
-4. `admin -> router-set-special-cap-usd`
-5. `admin -> router-set-special-enabled`
-6. `admin -> router-set-price-feed` for every fee token that should count toward the special bucket
-7. Optional: `admin -> router-fee-usd-value` to verify feed configuration
+3. `admin -> router-set-company-fee-claimer`
+4. `admin -> router-set-operations-fee-claimer`
+5. `admin -> router-set-operations-fee-bps`
+6. Optional: keep `admin -> router-set-company-pre-cap-enabled` enabled if you still want the company-only accrual phase
+7. `admin -> router-set-company-post-cap-fee-bps`
+8. `admin -> router-set-company-fee-cap-usd`
+9. `admin -> router-set-price-feed` for every fee token that should count toward the company cap
+10. Optional: `admin -> router-fee-usd-value` to verify feed configuration
 
-### Router upgrade + fee hold enable flow
+### Router upgrade + claim flow
 
-To enable retained router fees on an existing deployment:
+To enable retained router fee accounting on an existing deployment:
 
 1. Run `upgrade -> router` from `./script/deploy/interactive.sh`
-2. Run `admin -> router-set-hold-fees` for legacy fee holding, or configure the special deployer redeem bucket if you want accrual-based routing
-3. Later, run `admin -> router-claim-fees` or `admin -> router-claim-special-fees` as needed
+2. Configure the company, operations, cap, and price-feed settings under `admin`
+3. Later, run `admin -> router-claim-company-fees` or `admin -> router-claim-protocol-fees` as needed for pre-cap/fallback balances; `router-claim-operations-fees` is only needed if the operations claimer was unset when fees were collected
 
 ## Admin scripts
 

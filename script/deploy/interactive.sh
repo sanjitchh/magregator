@@ -67,42 +67,26 @@ prompt_token_address() {
   prompt_address 'Token address'
 }
 
-prompt_hold_fees() {
-  echo "Set hold fees to:"
-  select choice in enabled disabled; do
-    case "$choice" in
-      enabled)
-        EXTRA_ARGS=(true)
-        break
-        ;;
-      disabled)
-        EXTRA_ARGS=(false)
-        break
-        ;;
-      *) echo "Invalid option" ;;
-    esac
-  done
-}
-
-prompt_special_redeem_enabled() {
-  echo "Set special redeem to:"
-  select choice in enabled disabled; do
-    case "$choice" in
-      enabled)
-        EXTRA_ARGS=(true)
-        break
-        ;;
-      disabled)
-        EXTRA_ARGS=(false)
-        break
-        ;;
-      *) echo "Invalid option" ;;
-    esac
-  done
-}
-
 prompt_whole_usd() {
   prompt_uint 'USD amount in whole dollars'
+}
+
+prompt_enabled_disabled() {
+  local prompt="$1"
+  echo "$prompt"
+  select choice in enabled disabled; do
+    case "$choice" in
+      enabled)
+        EXTRA_ARGS=(true)
+        break
+        ;;
+      disabled)
+        EXTRA_ARGS=(false)
+        break
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
 }
 
 select_group() {
@@ -246,7 +230,7 @@ select_upgrade_action() {
 
 select_admin_action() {
   echo "Choose admin action:"
-  select c in router-fee-status router-native-balance router-token-balance router-fee-usd-value router-set-hold-fees router-set-fee-claimer router-set-deployer-redeemer router-set-special-enabled router-set-special-cap-usd router-set-price-feed router-set-price-feed-staleness router-claim-fees router-claim-special-fees update-adapters update-hop-tokens manage-uniswapv4-pools back; do
+  select c in router-fee-status router-native-balance router-token-balance router-fee-usd-value router-set-fee-claimer router-set-company-fee-claimer router-set-operations-fee-claimer router-set-operations-fee-bps router-set-company-pre-cap-enabled router-set-company-post-cap-fee-bps router-set-company-fee-cap-usd router-set-price-feed router-set-price-feed-staleness router-claim-operations-fees router-claim-company-fees router-claim-protocol-fees update-adapters update-hop-tokens manage-uniswapv4-pools back; do
     case "$c" in
       router-fee-status)
         reset_action_config
@@ -281,47 +265,65 @@ select_admin_action() {
         )
         break
         ;;
-      router-set-hold-fees)
-        reset_action_config
-        ACTION_LABEL='update router hold fees flag'
-        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runSetHoldFees(bool)'
-        MUTATES_STATE=1
-        prompt_hold_fees
-        break
-        ;;
       router-set-fee-claimer)
         reset_action_config
-        ACTION_LABEL='update router fee claimer'
+        ACTION_LABEL='update router protocol fee claimer'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runSetFeeClaimer(address)'
         MUTATES_STATE=1
-        EXTRA_ARGS=("$(prompt_address 'New fee claimer address')")
+        EXTRA_ARGS=("$(prompt_address 'New protocol fee claimer address')")
         break
         ;;
-      router-set-deployer-redeemer)
+      router-set-company-fee-claimer)
         reset_action_config
-        ACTION_LABEL='update deployer redeemer'
+        ACTION_LABEL='update company fee claimer'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runSetDeployerRedeemer(address)'
+        SIG='runSetCompanyFeeClaimer(address)'
         MUTATES_STATE=1
-        EXTRA_ARGS=("$(prompt_address 'New deployer redeemer address')")
+        EXTRA_ARGS=("$(prompt_address 'New company fee claimer address')")
         break
         ;;
-      router-set-special-enabled)
+      router-set-operations-fee-claimer)
         reset_action_config
-        ACTION_LABEL='update special redeem mode'
+        ACTION_LABEL='update operations fee claimer'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runSetSpecialRedeemEnabled(bool)'
+        SIG='runSetOperationsFeeClaimer(address)'
         MUTATES_STATE=1
-        prompt_special_redeem_enabled
+        EXTRA_ARGS=("$(prompt_address 'New operations fee claimer address')")
         break
         ;;
-      router-set-special-cap-usd)
+      router-set-operations-fee-bps)
         reset_action_config
-        ACTION_LABEL='update special redeem cap usd'
+        ACTION_LABEL='update operations fee bps'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runSetSpecialRedeemCapUsdWhole(uint256)'
+        SIG='runSetOperationsFeeBps(uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_uint 'Operations fee bps')")
+        break
+        ;;
+      router-set-company-pre-cap-enabled)
+        reset_action_config
+        ACTION_LABEL='update company pre-cap mode'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetCompanyPreCapEnabled(bool)'
+        MUTATES_STATE=1
+        prompt_enabled_disabled 'Set company pre-cap mode to:'
+        break
+        ;;
+      router-set-company-post-cap-fee-bps)
+        reset_action_config
+        ACTION_LABEL='update company post-cap fee bps'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetCompanyPostCapFeeBps(uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_uint 'Company post-cap fee bps')")
+        break
+        ;;
+      router-set-company-fee-cap-usd)
+        reset_action_config
+        ACTION_LABEL='update company fee cap usd'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runSetCompanyFeeCapUsdWhole(uint256)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_whole_usd)")
         break
@@ -347,24 +349,35 @@ select_admin_action() {
         EXTRA_ARGS=("$(prompt_uint 'Price feed staleness in seconds')")
         break
         ;;
-      router-claim-fees)
+      router-claim-operations-fees)
         reset_action_config
-        ACTION_LABEL='claim router fees'
+        ACTION_LABEL='claim router operations fees'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runClaimFees(address,address,uint256)'
+        SIG='runClaimOperationsFees(address,uint256)'
         MUTATES_STATE=1
         EXTRA_ARGS=(
           "$(prompt_address 'Fee token address (use 0x0000000000000000000000000000000000000000 for native)')"
-          "$(prompt_address 'Recipient address')"
           "$(prompt_uint 'Amount in token base units')"
         )
         break
         ;;
-      router-claim-special-fees)
+      router-claim-company-fees)
         reset_action_config
-        ACTION_LABEL='claim special router fees'
+        ACTION_LABEL='claim router company fees'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runClaimSpecialFees(address,uint256)'
+        SIG='runClaimCompanyFees(address,uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_token_address)"
+          "$(prompt_uint 'Amount in token base units')"
+        )
+        break
+        ;;
+      router-claim-protocol-fees)
+        reset_action_config
+        ACTION_LABEL='claim router protocol fees'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runClaimProtocolFees(address,uint256)'
         MUTATES_STATE=1
         EXTRA_ARGS=(
           "$(prompt_token_address)"

@@ -33,15 +33,20 @@ interface IMoksaRouter {
     event UpdatedAdapters(address[] _newAdapters);
     event UpdatedMinFee(uint256 _oldMinFee, uint256 _newMinFee);
     event UpdatedFeeClaimer(address _oldFeeClaimer, address _newFeeClaimer);
-    event UpdatedHoldFees(bool _oldHoldFees, bool _newHoldFees);
-    event UpdatedDeployerRedeemer(address _oldDeployerRedeemer, address _newDeployerRedeemer);
-    event UpdatedSpecialRedeemEnabled(bool _oldSpecialRedeemEnabled, bool _newSpecialRedeemEnabled);
-    event UpdatedSpecialRedeemCapUsd(uint256 _oldSpecialRedeemCapUsd, uint256 _newSpecialRedeemCapUsd);
+    event UpdatedCompanyFeeClaimer(address _oldCompanyFeeClaimer, address _newCompanyFeeClaimer);
+    event UpdatedOperationsFeeClaimer(address _oldOperationsFeeClaimer, address _newOperationsFeeClaimer);
+    event UpdatedOperationsFeeBps(uint256 _oldOperationsFeeBps, uint256 _newOperationsFeeBps);
+    event UpdatedCompanyPreCapEnabled(bool _oldCompanyPreCapEnabled, bool _newCompanyPreCapEnabled);
+    event UpdatedCompanyPostCapFeeBps(uint256 _oldCompanyPostCapFeeBps, uint256 _newCompanyPostCapFeeBps);
+    event UpdatedCompanyFeeCapUsd(uint256 _oldCompanyFeeCapUsd, uint256 _newCompanyFeeCapUsd);
     event UpdatedFeePriceFeed(address indexed _token, address _oldFeed, address _newFeed);
     event UpdatedPriceFeedStaleness(uint256 _oldPriceFeedStaleness, uint256 _newPriceFeedStaleness);
-    event FeesClaimed(address indexed _token, address indexed _to, uint256 _amount);
-    event SpecialFeesReserved(address indexed _token, uint256 _amount, uint256 _usdAmount);
-    event SpecialFeesClaimed(address indexed _token, address indexed _to, uint256 _amount, uint256 _usdAmount);
+    event OperationsFeesReserved(address indexed _token, uint256 _amount);
+    event CompanyFeesReserved(address indexed _token, uint256 _amount, uint256 _usdAmount);
+    event ProtocolFeesReserved(address indexed _token, uint256 _amount);
+    event OperationsFeesClaimed(address indexed _token, address indexed _to, uint256 _amount);
+    event CompanyFeesClaimed(address indexed _token, address indexed _to, uint256 _amount);
+    event ProtocolFeesClaimed(address indexed _token, address indexed _to, uint256 _amount);
     event MoksaSwap(address indexed _tokenIn, address indexed _tokenOut, uint256 _amountIn, uint256 _amountOut);
 
     // admin
@@ -49,15 +54,18 @@ interface IMoksaRouter {
     function setAdapters(address[] memory _adapters) external;
     function setFeeClaimer(address _claimer) external;
     function setMinFee(uint256 _fee) external;
-    function setHoldFees(bool _holdFees) external;
-    function setDeployerRedeemer(address _deployerRedeemer) external;
-    function setSpecialRedeemEnabled(bool _specialRedeemEnabled) external;
-    function setSpecialRedeemCapUsd(uint256 _specialRedeemCapUsd) external;
+    function setCompanyFeeClaimer(address _companyFeeClaimer) external;
+    function setOperationsFeeClaimer(address _operationsFeeClaimer) external;
+    function setOperationsFeeBps(uint256 _operationsFeeBps) external;
+    function setCompanyPreCapEnabled(bool _companyPreCapEnabled) external;
+    function setCompanyPostCapFeeBps(uint256 _companyPostCapFeeBps) external;
+    function setCompanyFeeCapUsd(uint256 _companyFeeCapUsd) external;
     function setFeePriceFeed(address _token, address _priceFeed) external;
     function setPriceFeedStaleness(uint256 _priceFeedStaleness) external;
-    function claimFees(address _token, address _to, uint256 _amount) external;
-    function claimSpecialFees(address _token, uint256 _amount) external;
-    function remainingSpecialRedeemUsd() external view returns (uint256);
+    function claimOperationsFees(address _token, uint256 _amount) external;
+    function claimCompanyFees(address _token, uint256 _amount) external;
+    function claimProtocolFees(address _token, uint256 _amount) external;
+    function remainingCompanyFeeCapUsd() external view returns (uint256);
     function getFeeUsdValue(address _token, uint256 _amount) external view returns (uint256);
 
     // misc

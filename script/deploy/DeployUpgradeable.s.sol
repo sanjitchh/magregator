@@ -213,9 +213,14 @@ contract DeployUpgradeable is Script {
     }
 
     function _configureRouter(string calldata prefix, MoksaRouter router) internal {
-        address deployerRedeemer = vm.envOr(_key(prefix, "DEPLOYER_REDEEMER"), address(0));
-        if (deployerRedeemer != address(0)) {
-            router.setDeployerRedeemer(deployerRedeemer);
+        address companyFeeClaimer = vm.envOr(_key(prefix, "COMPANY_FEE_CLAIMER"), address(0));
+        if (companyFeeClaimer != address(0)) {
+            router.setCompanyFeeClaimer(companyFeeClaimer);
+        }
+
+        address operationsFeeClaimer = vm.envOr(_key(prefix, "OPERATIONS_FEE_CLAIMER"), address(0));
+        if (operationsFeeClaimer != address(0)) {
+            router.setOperationsFeeClaimer(operationsFeeClaimer);
         }
 
         uint256 minFee = vm.envOr(_key(prefix, "ROUTER_MIN_FEE"), uint256(0));
@@ -223,14 +228,24 @@ contract DeployUpgradeable is Script {
             router.setMinFee(minFee);
         }
 
-        bool holdFees = vm.envOr(_key(prefix, "ROUTER_HOLD_FEES"), false);
-        if (holdFees) {
-            router.setHoldFees(true);
+        uint256 operationsFeeBps = vm.envOr(_key(prefix, "OPERATIONS_FEE_BPS"), uint256(0));
+        if (operationsFeeBps > 0) {
+            router.setOperationsFeeBps(operationsFeeBps);
         }
 
-        uint256 specialRedeemCapUsd = vm.envOr(_key(prefix, "SPECIAL_REDEEM_CAP_USD"), uint256(0));
-        if (specialRedeemCapUsd > 0) {
-            router.setSpecialRedeemCapUsd(specialRedeemCapUsd);
+        bool companyPreCapEnabled = vm.envOr(_key(prefix, "COMPANY_PRE_CAP_ENABLED"), true);
+        if (!companyPreCapEnabled) {
+            router.setCompanyPreCapEnabled(false);
+        }
+
+        uint256 companyPostCapFeeBps = vm.envOr(_key(prefix, "COMPANY_POST_CAP_FEE_BPS"), uint256(0));
+        if (companyPostCapFeeBps > 0) {
+            router.setCompanyPostCapFeeBps(companyPostCapFeeBps);
+        }
+
+        uint256 companyFeeCapUsd = vm.envOr(_key(prefix, "COMPANY_FEE_CAP_USD"), uint256(0));
+        if (companyFeeCapUsd > 0) {
+            router.setCompanyFeeCapUsd(companyFeeCapUsd);
         }
 
         uint256 priceFeedStaleness = vm.envOr(_key(prefix, "PRICE_FEED_STALENESS"), uint256(0));
@@ -239,11 +254,6 @@ contract DeployUpgradeable is Script {
         }
 
         _configureRouterPriceFeeds(prefix, router);
-
-        bool specialRedeemEnabled = vm.envOr(_key(prefix, "SPECIAL_REDEEM_ENABLED"), false);
-        if (specialRedeemEnabled) {
-            router.setSpecialRedeemEnabled(true);
-        }
     }
 
     function _configureRouterPriceFeeds(string calldata prefix, MoksaRouter router) internal {
