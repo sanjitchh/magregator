@@ -264,78 +264,78 @@ select_upgrade_action() {
   done
 }
 
-select_admin_action() {
-  echo "Choose admin action:"
-  select c in router-fee-status router-native-balance router-token-balance router-set-fee-vault router-set-fee-claimer router-set-company-fee-claimer router-set-operations-fee-claimer router-set-operations-fee-bps router-claim-operations-fees router-claim-company-fees router-claim-protocol-fees vault-status vault-token-balance vault-set-router vault-set-executor vault-set-usdc vault-set-recovery-recipient vault-set-recovery-cap-usdc vault-set-development-recipient vault-set-development-cap-usdc vault-set-postcap-company-recipient vault-set-protocol-recipient vault-set-postcap-company-bps vault-set-allowed-target vault-set-token-approval vault-distribute-pending-usdc update-adapters update-hop-tokens manage-uniswapv4-pools back; do
+select_admin_router_action() {
+  echo "Choose router admin action:"
+  select c in fee-status native-balance token-balance set-fee-vault set-fee-claimer set-company-fee-claimer set-operations-fee-claimer set-operations-fee-bps claim-operations-fees claim-company-fees claim-protocol-fees back; do
     case "$c" in
-      router-fee-status)
+      fee-status)
         reset_action_config
         ACTION_LABEL='show router fee settings'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runStatus()'
-        break
+        return 0
         ;;
-      router-native-balance)
+      native-balance)
         reset_action_config
         ACTION_LABEL='show router native balance'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runNativeBalance()'
-        break
+        return 0
         ;;
-      router-token-balance)
+      token-balance)
         reset_action_config
         ACTION_LABEL='show router token balance'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runTokenBalance(address)'
         EXTRA_ARGS=("$(prompt_token_address)")
-        break
+        return 0
         ;;
-      router-set-fee-vault)
+      set-fee-vault)
         reset_action_config
         ACTION_LABEL='update router fee vault'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runSetFeeVault(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New fee vault address')")
-        break
+        return 0
         ;;
-      router-set-fee-claimer)
+      set-fee-claimer)
         reset_action_config
         ACTION_LABEL='update legacy router protocol fee claimer'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runSetFeeClaimer(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New legacy protocol fee claimer address')")
-        break
+        return 0
         ;;
-      router-set-company-fee-claimer)
+      set-company-fee-claimer)
         reset_action_config
         ACTION_LABEL='update legacy company fee claimer'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runSetCompanyFeeClaimer(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New legacy company fee claimer address')")
-        break
+        return 0
         ;;
-      router-set-operations-fee-claimer)
+      set-operations-fee-claimer)
         reset_action_config
         ACTION_LABEL='update operations fee claimer'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runSetOperationsFeeClaimer(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New operations fee claimer address')")
-        break
+        return 0
         ;;
-      router-set-operations-fee-bps)
+      set-operations-fee-bps)
         reset_action_config
         ACTION_LABEL='update operations fee bps'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
         SIG='runSetOperationsFeeBps(uint256)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_uint 'Operations fee bps')")
-        break
+        return 0
         ;;
-      router-claim-operations-fees)
+      claim-operations-fees)
         reset_action_config
         ACTION_LABEL='claim router operations fees'
         SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
@@ -345,114 +345,150 @@ select_admin_action() {
           "$(prompt_address 'Fee token address (use 0x0000000000000000000000000000000000000000 for native)')"
           "$(prompt_uint 'Amount in token base units')"
         )
-        break
+        return 0
         ;;
-      vault-status)
+      claim-company-fees)
+        reset_action_config
+        ACTION_LABEL='claim router company fees'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runClaimCompanyFees(address,uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_token_address)"
+          "$(prompt_uint 'Amount in token base units')"
+        )
+        return 0
+        ;;
+      claim-protocol-fees)
+        reset_action_config
+        ACTION_LABEL='claim router protocol fees'
+        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
+        SIG='runClaimProtocolFees(address,uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_token_address)"
+          "$(prompt_uint 'Amount in token base units')"
+        )
+        return 0
+        ;;
+      back)
+        return 1
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+select_admin_vault_action() {
+  echo "Choose fee vault admin action:"
+  select c in status token-balance set-router set-executor set-usdc set-recovery-recipient set-recovery-cap-usdc set-development-recipient set-development-cap-usdc set-postcap-company-recipient set-protocol-recipient set-postcap-company-bps set-allowed-target set-token-approval distribute-pending-usdc back; do
+    case "$c" in
+      status)
         reset_action_config
         ACTION_LABEL='show fee vault settings'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runStatus()'
-        break
+        return 0
         ;;
-      vault-token-balance)
+      token-balance)
         reset_action_config
         ACTION_LABEL='show fee vault token balance'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runTokenBalance(address)'
         EXTRA_ARGS=("$(prompt_token_address)")
-        break
+        return 0
         ;;
-      vault-set-router)
+      set-router)
         reset_action_config
         ACTION_LABEL='update fee vault router'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetRouter(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New router address')")
-        break
+        return 0
         ;;
-      vault-set-executor)
+      set-executor)
         reset_action_config
         ACTION_LABEL='update fee vault executor'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetExecutor(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New executor address')")
-        break
+        return 0
         ;;
-      vault-set-usdc)
+      set-usdc)
         reset_action_config
         ACTION_LABEL='update fee vault USDC'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetUsdc(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New USDC address')")
-        break
+        return 0
         ;;
-      vault-set-recovery-recipient)
+      set-recovery-recipient)
         reset_action_config
         ACTION_LABEL='update recovery recipient'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetRecoveryRecipient(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New recovery recipient address')")
-        break
+        return 0
         ;;
-      vault-set-recovery-cap-usdc)
+      set-recovery-cap-usdc)
         reset_action_config
         ACTION_LABEL='update recovery cap usdc'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetRecoveryCapUsdc(uint256)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_uint 'Recovery cap in USDC base units')")
-        break
+        return 0
         ;;
-      vault-set-development-recipient)
+      set-development-recipient)
         reset_action_config
         ACTION_LABEL='update development recipient'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetDevelopmentRecipient(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New development recipient address')")
-        break
+        return 0
         ;;
-      vault-set-development-cap-usdc)
+      set-development-cap-usdc)
         reset_action_config
         ACTION_LABEL='update development cap usdc'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetDevelopmentCapUsdc(uint256)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_uint 'Development cap in USDC base units')")
-        break
+        return 0
         ;;
-      vault-set-postcap-company-recipient)
+      set-postcap-company-recipient)
         reset_action_config
         ACTION_LABEL='update post-cap company recipient'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetPostCapCompanyRecipient(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New post-cap company recipient address')")
-        break
+        return 0
         ;;
-      vault-set-protocol-recipient)
+      set-protocol-recipient)
         reset_action_config
         ACTION_LABEL='update protocol recipient'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetProtocolRecipient(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New protocol recipient address')")
-        break
+        return 0
         ;;
-      vault-set-postcap-company-bps)
+      set-postcap-company-bps)
         reset_action_config
         ACTION_LABEL='update post-cap company bps'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runSetPostCapCompanyBps(uint256)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_uint 'Post-cap company bps')")
-        break
+        return 0
         ;;
-      vault-set-allowed-target)
+      set-allowed-target)
         reset_action_config
         ACTION_LABEL='update allowed swap target'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
@@ -462,9 +498,9 @@ select_admin_action() {
           "$(prompt_address 'Swap target address')"
           "$(prompt_bool 'Set allowed swap target to:')"
         )
-        break
+        return 0
         ;;
-      vault-set-token-approval)
+      set-token-approval)
         reset_action_config
         ACTION_LABEL='update fee vault token approval'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
@@ -475,67 +511,87 @@ select_admin_action() {
           "$(prompt_address 'Approved spender address')"
           "$(prompt_uint 'Approval amount in token base units')"
         )
-        break
+        return 0
         ;;
-      vault-distribute-pending-usdc)
+      distribute-pending-usdc)
         reset_action_config
         ACTION_LABEL='distribute pending fee vault usdc'
         SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
         SIG='runDistributePendingUsdc()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
-      router-claim-company-fees)
-        reset_action_config
-        ACTION_LABEL='claim router company fees'
-        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runClaimCompanyFees(address,uint256)'
-        MUTATES_STATE=1
-        EXTRA_ARGS=(
-          "$(prompt_token_address)"
-          "$(prompt_uint 'Amount in token base units')"
-        )
-        break
+      back)
+        return 1
         ;;
-      router-claim-protocol-fees)
-        reset_action_config
-        ACTION_LABEL='claim router protocol fees'
-        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runClaimProtocolFees(address,uint256)'
-        MUTATES_STATE=1
-        EXTRA_ARGS=(
-          "$(prompt_token_address)"
-          "$(prompt_uint 'Amount in token base units')"
-        )
-        break
-        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+select_admin_sync_action() {
+  echo "Choose sync/admin maintenance action:"
+  select c in update-adapters update-hop-tokens manage-uniswapv4-pools back; do
+    case "$c" in
       update-adapters)
         reset_action_config
         ACTION_LABEL='sync router adapters'
         SCRIPT_TARGET='script/admin/UpdateAdapters.s.sol:UpdateAdapters'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       update-hop-tokens)
         reset_action_config
         ACTION_LABEL='sync router hop tokens'
         SCRIPT_TARGET='script/admin/UpdateHopTokens.s.sol:UpdateHopTokens'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       manage-uniswapv4-pools)
         reset_action_config
         ACTION_LABEL='sync uniswapv4 pools'
         SCRIPT_TARGET='script/admin/ManageUniswapV4Pools.s.sol:ManageUniswapV4Pools'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       back)
-        select_group
-        break
+        return 1
         ;;
       *) echo "Invalid option" ;;
     esac
+  done
+}
+
+select_admin_action() {
+  while true; do
+    echo "Choose admin category:"
+    select c in router-fees fee-vault sync-tools back; do
+      case "$c" in
+        router-fees)
+          if select_admin_router_action; then
+            return
+          fi
+          break
+          ;;
+        fee-vault)
+          if select_admin_vault_action; then
+            return
+          fi
+          break
+          ;;
+        sync-tools)
+          if select_admin_sync_action; then
+            return
+          fi
+          break
+          ;;
+        back)
+          select_group
+          return
+          ;;
+        *) echo "Invalid option" ;;
+      esac
+    done
   done
 }
 

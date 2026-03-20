@@ -105,11 +105,15 @@ Fresh fee vault deployments also pick up optional treasury settings from `.env` 
 - `<PREFIX>_PROTOCOL_RECIPIENT`
 - `<PREFIX>_POST_CAP_COMPANY_BPS`
 
+`RECOVERY_CAP_USDC` and `DEVELOPMENT_CAP_USDC` use raw USDC base units. With 6-decimal USDC, `50,000 USDC` should be set as `50000000000`.
+
 That means new router and fee vault deployments can come up preconfigured without requiring separate post-deploy admin transactions.
 
 ### Router fee management
 
-The interactive script now includes dedicated router fee operations under `admin`:
+The interactive script now groups `admin` actions into smaller submenus: `router-fees`, `fee-vault`, and `sync-tools`.
+
+Under `admin -> router-fees` you can access:
 
 - `router-fee-status`
 - `router-native-balance`
@@ -127,7 +131,7 @@ These actions are backed by `script/admin/ManageRouterFees.s.sol`.
 
 ### Fee vault management
 
-The interactive script also includes dedicated fee vault operations under `admin`:
+Under `admin -> fee-vault` you can access:
 
 - `vault-status`
 - `vault-token-balance`
@@ -146,6 +150,12 @@ The interactive script also includes dedicated fee vault operations under `admin
 - `vault-distribute-pending-usdc`
 
 These actions are backed by `script/admin/ManageFeeVault.s.sol`.
+
+Under `admin -> sync-tools` you can access:
+
+- `update-adapters`
+- `update-hop-tokens`
+- `manage-uniswapv4-pools`
 
 Direct examples:
 
