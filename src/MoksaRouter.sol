@@ -5,7 +5,6 @@ pragma experimental ABIEncoderV2;
 import "./interface/IMoksaRouter.sol";
 import "./interface/IAdapter.sol";
 import "./interface/IERC20.sol";
-import "./interface/IAggregatorV3.sol";
 import "./interface/IWETH.sol";
 import "./lib/SafeERC20.sol";
 import "./lib/Maintainable.sol";
@@ -47,6 +46,7 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
     mapping(address => uint256) public OPERATIONS_RESERVED_FEES;
     mapping(address => uint256) public COMPANY_RESERVED_FEES;
     mapping(address => uint256) public PROTOCOL_RESERVED_FEES;
+    address public FEE_VAULT;
 
     constructor() {
         _disableInitializers();
@@ -112,31 +112,9 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         OPERATIONS_FEE_BPS = _operationsFeeBps;
     }
 
-    function setCompanyPreCapEnabled(bool _companyPreCapEnabled) override external onlyMaintainer {
-        emit UpdatedCompanyPreCapEnabled(COMPANY_PRE_CAP_ENABLED, _companyPreCapEnabled);
-        COMPANY_PRE_CAP_ENABLED = _companyPreCapEnabled;
-    }
-
-    function setCompanyPostCapFeeBps(uint256 _companyPostCapFeeBps) override external onlyMaintainer {
-        require(_companyPostCapFeeBps <= FEE_DENOMINATOR, "MoksaRouter: Invalid fee bps");
-        emit UpdatedCompanyPostCapFeeBps(COMPANY_POST_CAP_FEE_BPS, _companyPostCapFeeBps);
-        COMPANY_POST_CAP_FEE_BPS = _companyPostCapFeeBps;
-    }
-
-    function setCompanyFeeCapUsd(uint256 _companyFeeCapUsd) override external onlyMaintainer {
-        emit UpdatedCompanyFeeCapUsd(COMPANY_FEE_CAP_USD, _companyFeeCapUsd);
-        COMPANY_FEE_CAP_USD = _companyFeeCapUsd;
-    }
-
-    function setFeePriceFeed(address _token, address _priceFeed) override external onlyMaintainer {
-        emit UpdatedFeePriceFeed(_token, FEE_PRICE_FEEDS[_token], _priceFeed);
-        FEE_PRICE_FEEDS[_token] = _priceFeed;
-    }
-
-    function setPriceFeedStaleness(uint256 _priceFeedStaleness) override external onlyMaintainer {
-        require(_priceFeedStaleness > 0, "MoksaRouter: Invalid staleness");
-        emit UpdatedPriceFeedStaleness(PRICE_FEED_STALENESS, _priceFeedStaleness);
-        PRICE_FEED_STALENESS = _priceFeedStaleness;
+    function setFeeVault(address _feeVault) override external onlyMaintainer {
+        emit UpdatedFeeVault(FEE_VAULT, _feeVault);
+        FEE_VAULT = _feeVault;
     }
 
     function claimOperationsFees(address _token, uint256 _amount) override external onlyMaintainer {
@@ -170,20 +148,6 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         _transferTokenOut(_token, FEE_CLAIMER, _amount);
 
         emit ProtocolFeesClaimed(_token, FEE_CLAIMER, _amount);
-    }
-
-    function remainingCompanyFeeCapUsd() override external view returns (uint256) {
-        if (companyAccruedUsd >= COMPANY_FEE_CAP_USD) {
-            return 0;
-        }
-
-        return COMPANY_FEE_CAP_USD - companyAccruedUsd;
-    }
-
-    function getFeeUsdValue(address _token, uint256 _amount) override external view returns (uint256) {
-        (bool success, uint256 usdValue) = _tryGetFeeUsdValue(_token, _amount);
-        require(success, "MoksaRouter: Missing price feed");
-        return usdValue;
     }
 
     //  -- GENERAL --
@@ -276,7 +240,7 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
             return;
         }
 
-        _reserveCompanyAndProtocolFees(_token, remainingAmount);
+        _depositFeeVault(_token, remainingAmount);
     }
 
     function _collectOperationsFee(address _token, uint256 _amount) internal {
@@ -290,170 +254,11 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         emit OperationsFeesClaimed(_token, OPERATIONS_FEE_CLAIMER, _amount);
     }
 
-    function _reserveCompanyAndProtocolFees(address _token, uint256 _feeAmount) internal {
-        if (!COMPANY_PRE_CAP_ENABLED || COMPANY_FEE_CAP_USD == 0 || companyAccruedUsd >= COMPANY_FEE_CAP_USD) {
-            _reservePostCapFees(_token, _feeAmount);
-            return;
-        }
+    function _depositFeeVault(address _token, uint256 _amount) internal {
+        require(FEE_VAULT != address(0), "MoksaRouter: Missing fee vault");
 
-        (bool success, uint256 feeUsdValue) = _tryGetFeeUsdValue(_token, _feeAmount);
-
-        if (!success || feeUsdValue == 0) {
-            _reservePostCapFees(_token, _feeAmount);
-            return;
-        }
-
-        uint256 remainingUsd = COMPANY_FEE_CAP_USD - companyAccruedUsd;
-        if (feeUsdValue <= remainingUsd) {
-            _reserveCompanyFees(_token, _feeAmount, feeUsdValue);
-            companyAccruedUsd += feeUsdValue;
-            return;
-        }
-
-        (bool amountSuccess, uint256 companyPreCapAmount) = _tryGetTokenAmountForUsd(_token, remainingUsd);
-
-        if (!amountSuccess || companyPreCapAmount == 0) {
-            _reservePostCapFees(_token, _feeAmount);
-            return;
-        }
-
-        if (companyPreCapAmount > _feeAmount) {
-            companyPreCapAmount = _feeAmount;
-        }
-
-        uint256 companyPreCapUsd = _amountToUsdValue(_token, companyPreCapAmount);
-        uint256 remainder = _feeAmount - companyPreCapAmount;
-
-        if (companyPreCapAmount > 0) {
-            _reserveCompanyFees(_token, companyPreCapAmount, companyPreCapUsd);
-            companyAccruedUsd += companyPreCapUsd;
-        }
-
-        if (remainder > 0) {
-            _reservePostCapFees(_token, remainder);
-        }
-
-        if (companyAccruedUsd >= COMPANY_FEE_CAP_USD || COMPANY_FEE_CAP_USD - companyAccruedUsd <= 1) {
-            companyAccruedUsd = COMPANY_FEE_CAP_USD;
-        }
-    }
-
-    function _reservePostCapFees(address _token, uint256 _feeAmount) internal {
-        uint256 companyAmount = (_feeAmount * COMPANY_POST_CAP_FEE_BPS) / FEE_DENOMINATOR;
-        uint256 protocolAmount = _feeAmount - companyAmount;
-
-        if (companyAmount > 0) {
-            _collectCompanyFee(_token, companyAmount);
-        }
-
-        if (protocolAmount > 0) {
-            _collectProtocolFee(_token, protocolAmount);
-        }
-    }
-
-    function _reserveCompanyFees(address _token, uint256 _amount, uint256 _usdAmount) internal {
-        COMPANY_RESERVED_FEES[_token] += _amount;
-        emit CompanyFeesReserved(_token, _amount, _usdAmount);
-    }
-
-    function _collectCompanyFee(address _token, uint256 _amount) internal {
-        if (COMPANY_FEE_CLAIMER == address(0)) {
-            _reserveCompanyFees(_token, _amount, 0);
-            return;
-        }
-
-        _transferTokenOut(_token, COMPANY_FEE_CLAIMER, _amount);
-        emit CompanyFeesClaimed(_token, COMPANY_FEE_CLAIMER, _amount);
-    }
-
-    function _collectProtocolFee(address _token, uint256 _amount) internal {
-        if (FEE_CLAIMER == address(0)) {
-            PROTOCOL_RESERVED_FEES[_token] += _amount;
-            emit ProtocolFeesReserved(_token, _amount);
-            return;
-        }
-
-        _transferTokenOut(_token, FEE_CLAIMER, _amount);
-        emit ProtocolFeesClaimed(_token, FEE_CLAIMER, _amount);
-    }
-
-    function _amountToUsdValue(address _token, uint256 _amount) internal view returns (uint256) {
-        (, uint256 usdValue) = _tryGetFeeUsdValue(_token, _amount);
-        return usdValue;
-    }
-
-    function _tryGetFeeUsdValue(address _token, uint256 _amount) internal view returns (bool, uint256) {
-        if (_amount == 0) {
-            return (true, 0);
-        }
-
-        address priceFeed = FEE_PRICE_FEEDS[_token];
-        if (priceFeed == address(0)) {
-            return (false, 0);
-        }
-
-        try IAggregatorV3(priceFeed).latestRoundData() returns (
-            uint80 roundId,
-            int256 answer,
-            uint256,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) {
-            if (answer <= 0 || answeredInRound < roundId || updatedAt == 0 || block.timestamp - updatedAt > PRICE_FEED_STALENESS) {
-                return (false, 0);
-            }
-
-            try IAggregatorV3(priceFeed).decimals() returns (uint8 feedDecimals) {
-                uint256 scaledPrice = _scaleValue(uint256(answer), feedDecimals, 8);
-                uint8 tokenDecimals = IERC20(_token).decimals();
-                return (true, (_amount * scaledPrice) / (10 ** tokenDecimals));
-            } catch {
-                return (false, 0);
-            }
-        } catch {
-            return (false, 0);
-        }
-    }
-
-    function _tryGetTokenAmountForUsd(address _token, uint256 _usdAmount) internal view returns (bool, uint256) {
-        address priceFeed = FEE_PRICE_FEEDS[_token];
-        if (priceFeed == address(0)) {
-            return (false, 0);
-        }
-
-        try IAggregatorV3(priceFeed).latestRoundData() returns (
-            uint80 roundId,
-            int256 answer,
-            uint256,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) {
-            if (answer <= 0 || answeredInRound < roundId || updatedAt == 0 || block.timestamp - updatedAt > PRICE_FEED_STALENESS) {
-                return (false, 0);
-            }
-
-            try IAggregatorV3(priceFeed).decimals() returns (uint8 feedDecimals) {
-                uint256 scaledPrice = _scaleValue(uint256(answer), feedDecimals, 8);
-                uint8 tokenDecimals = IERC20(_token).decimals();
-                return (true, (_usdAmount * (10 ** tokenDecimals)) / scaledPrice);
-            } catch {
-                return (false, 0);
-            }
-        } catch {
-            return (false, 0);
-        }
-    }
-
-    function _scaleValue(uint256 _value, uint8 _fromDecimals, uint8 _toDecimals) internal pure returns (uint256) {
-        if (_fromDecimals == _toDecimals) {
-            return _value;
-        }
-
-        if (_fromDecimals < _toDecimals) {
-            return _value * (10 ** (_toDecimals - _fromDecimals));
-        }
-
-        return _value / (10 ** (_fromDecimals - _toDecimals));
+        _transferTokenOut(_token, FEE_VAULT, _amount);
+        emit FeeVaultDeposited(_token, FEE_VAULT, _amount);
     }
     
     // -- QUERIES --

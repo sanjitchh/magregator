@@ -87,20 +87,25 @@ Typical flow:
 
 If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEPLOYER` in `.env`.
 
-Fresh router deployments also pick up optional fee-accounting settings from `.env` automatically. Supported keys are:
+Fresh router deployments also pick up optional fee-routing settings from `.env` automatically. Supported keys are:
 
-- `<PREFIX>_COMPANY_FEE_CLAIMER`
 - `<PREFIX>_OPERATIONS_FEE_CLAIMER`
 - `<PREFIX>_OPERATIONS_FEE_BPS`
-- `<PREFIX>_COMPANY_PRE_CAP_ENABLED`
-- `<PREFIX>_COMPANY_POST_CAP_FEE_BPS`
-- `<PREFIX>_COMPANY_FEE_CAP_USD` (8 decimals, so `$50,000` = `5000000000000`)
-- `<PREFIX>_PRICE_FEED_STALENESS`
-- `<PREFIX>_ROUTER_FEE_PRICE_FEED_COUNT`
-- `<PREFIX>_ROUTER_FEE_PRICE_FEED_TOKEN_<INDEX>`
-- `<PREFIX>_ROUTER_FEE_PRICE_FEED_<INDEX>`
+- `<PREFIX>_FEE_VAULT`
 
-That means new router deployments can come up preconfigured without requiring separate post-deploy admin transactions.
+Fresh fee vault deployments also pick up optional treasury settings from `.env` automatically. Supported keys are:
+
+- `<PREFIX>_FEE_VAULT_ROUTER`
+- `<PREFIX>_FEE_VAULT_EXECUTOR`
+- `<PREFIX>_RECOVERY_RECIPIENT`
+- `<PREFIX>_RECOVERY_CAP_USDC`
+- `<PREFIX>_DEVELOPMENT_RECIPIENT`
+- `<PREFIX>_DEVELOPMENT_CAP_USDC`
+- `<PREFIX>_POST_CAP_COMPANY_RECIPIENT`
+- `<PREFIX>_PROTOCOL_RECIPIENT`
+- `<PREFIX>_POST_CAP_COMPANY_BPS`
+
+That means new router and fee vault deployments can come up preconfigured without requiring separate post-deploy admin transactions.
 
 ### Router fee management
 
@@ -109,21 +114,38 @@ The interactive script now includes dedicated router fee operations under `admin
 - `router-fee-status`
 - `router-native-balance`
 - `router-token-balance`
-- `router-fee-usd-value`
+- `router-set-fee-vault`
 - `router-set-fee-claimer`
 - `router-set-company-fee-claimer`
 - `router-set-operations-fee-claimer`
 - `router-set-operations-fee-bps`
-- `router-set-company-pre-cap-enabled`
-- `router-set-company-post-cap-fee-bps`
-- `router-set-company-fee-cap-usd`
-- `router-set-price-feed`
-- `router-set-price-feed-staleness`
 - `router-claim-operations-fees`
 - `router-claim-company-fees`
 - `router-claim-protocol-fees`
 
 These actions are backed by `script/admin/ManageRouterFees.s.sol`.
+
+### Fee vault management
+
+The interactive script also includes dedicated fee vault operations under `admin`:
+
+- `vault-status`
+- `vault-token-balance`
+- `vault-set-router`
+- `vault-set-executor`
+- `vault-set-usdc`
+- `vault-set-recovery-recipient`
+- `vault-set-recovery-cap-usdc`
+- `vault-set-development-recipient`
+- `vault-set-development-cap-usdc`
+- `vault-set-postcap-company-recipient`
+- `vault-set-protocol-recipient`
+- `vault-set-postcap-company-bps`
+- `vault-set-allowed-target`
+- `vault-set-token-approval`
+- `vault-distribute-pending-usdc`
+
+These actions are backed by `script/admin/ManageFeeVault.s.sol`.
 
 Direct examples:
 
@@ -139,31 +161,39 @@ forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --broadcast
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runSetCompanyFeeClaimer(address)" \
-  0xYourCompanyFeeClaimer \
+  --sig "runSetFeeVault(address)" \
+  0xYourFeeVault \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
   --broadcast
 
-forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runSetCompanyFeeCapUsdWhole(uint256)" \
-  50000 \
+forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
+  --sig "runStatus()" \
+  --rpc-url monad \
+
+forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
+  --sig "runSetRecoveryCapUsdc(uint256)" \
+  50000000000 \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
   --broadcast
 
-forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runSetFeePriceFeed(address,address)" \
-  0xYourFeeToken \
-  0xYourUsdPriceFeed \
+forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
+  --sig "runSetAllowedSwapTarget(address,bool)" \
+  0xYourSwapTarget \
+  true \
   --rpc-url monad \
   --private-key "$MONAD_PK_DEPLOYER" \
   --broadcast
 
-forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runTokenBalance(address)" \
+forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
+  --sig "runSetTokenApproval(address,address,uint256)" \
   0xYourToken \
-  --rpc-url monad
+  0xYourSwapTarget \
+  1000000000000000000 \
+  --rpc-url monad \
+  --private-key "$MONAD_PK_DEPLOYER" \
+  --broadcast
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --sig "runClaimOperationsFees(address,uint256)" \
@@ -184,42 +214,44 @@ forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
 
 Notes:
 
-- For native-entry swaps, retained fees are usually held as wrapped native in the router.
-- Use `router-token-balance` for ERC20 balances and bucket totals, and `router-native-balance` for raw native balance.
+- For native-entry swaps, retained fees are usually held as wrapped native in the router or fee vault.
+- Use `router-token-balance` to inspect fallback balances left in the router.
+- Use `vault-token-balance` to inspect tokens waiting for conversion inside the fee vault.
 
-### Router fee buckets
+### Fee flow
 
-The router now pays operations fees out immediately when `OPERATIONS_FEE_CLAIMER` is configured, and keeps the remaining fee inside the router in per-token buckets:
+The fee system now works in two stages:
 
 - A configurable operations slice is paid out first to `OPERATIONS_FEE_CLAIMER`.
-- If `COMPANY_PRE_CAP_ENABLED` is on, then before the company USD cap is reached the remaining fee is reserved entirely for `COMPANY_FEE_CLAIMER`.
-- When pre-cap mode is off, or once the cap is reached, the remaining fee is split and paid out immediately between `COMPANY_FEE_CLAIMER` and `FEE_CLAIMER` using configurable basis points.
-- Tokens without a configured USD price feed still accrue token balances, but they do not advance the USD cap counter.
+- All remaining fee tokens are sent directly from the router to `FeeVault`.
+- Your executor cron then calls `FeeVault.executeAndDistribute(...)` to swap accumulated tokens into `USDC` and distribute the recovered `USDC` in the same transaction.
+- The vault allocates recovered `USDC` in this order:
+  1. recovery bucket until `RECOVERY_CAP_USDC`
+  2. development bucket until `DEVELOPMENT_CAP_USDC`
+  3. post-cap split between `POST_CAP_COMPANY_RECIPIENT` and `PROTOCOL_RECIPIENT`
+- If a recipient is unset, that share stays pending in the vault until `vault-distribute-pending-usdc` is called after the recipient is configured.
 - If `OPERATIONS_FEE_CLAIMER` is unset, the operations slice stays claimable from the router as a fallback.
-- If `COMPANY_FEE_CLAIMER` or `FEE_CLAIMER` is unset during immediate split payout, that share stays claimable from the router as a fallback.
 
-The USD accounting uses 8 decimals internally. For example, `$50,000` is stored as `5000000000000`.
+The cap accounting uses actual recovered `USDC` base units. For example, `50,000 USDC` with 6 decimals is stored as `50000000000`.
 
 Recommended setup order:
 
 1. `upgrade -> router`
-2. `admin -> router-set-fee-claimer`
-3. `admin -> router-set-company-fee-claimer`
+2. `deploy -> feevault` or `upgrade -> feevault`
+3. `admin -> router-set-fee-vault`
 4. `admin -> router-set-operations-fee-claimer`
 5. `admin -> router-set-operations-fee-bps`
-6. Optional: keep `admin -> router-set-company-pre-cap-enabled` enabled if you still want the company-only accrual phase
-7. `admin -> router-set-company-post-cap-fee-bps`
-8. `admin -> router-set-company-fee-cap-usd`
-9. `admin -> router-set-price-feed` for every fee token that should count toward the company cap
-10. Optional: `admin -> router-fee-usd-value` to verify feed configuration
-
-### Router upgrade + claim flow
-
-To enable retained router fee accounting on an existing deployment:
-
-1. Run `upgrade -> router` from `./script/deploy/interactive.sh`
-2. Configure the company, operations, cap, and price-feed settings under `admin`
-3. Later, run `admin -> router-claim-company-fees` or `admin -> router-claim-protocol-fees` as needed for pre-cap/fallback balances; `router-claim-operations-fees` is only needed if the operations claimer was unset when fees were collected
+6. `admin -> vault-set-router`
+7. `admin -> vault-set-executor`
+8. `admin -> vault-set-recovery-recipient`
+9. `admin -> vault-set-recovery-cap-usdc`
+10. Optional: `admin -> vault-set-development-recipient`
+11. Optional: `admin -> vault-set-development-cap-usdc`
+12. `admin -> vault-set-postcap-company-recipient`
+13. `admin -> vault-set-protocol-recipient`
+14. `admin -> vault-set-postcap-company-bps`
+15. `admin -> vault-set-allowed-target`
+16. `admin -> vault-set-token-approval`
 
 ## Admin scripts
 
@@ -234,7 +266,9 @@ forge script script/admin/CheckAdapterQuotes.s.sol:CheckAdapterQuotes \
   1000000000000000000 \
   --rpc-url sepolia
 forge script script/admin/UpgradeRouter.s.sol --rpc-url sepolia --broadcast
+forge script script/admin/UpgradeFeeVault.s.sol --rpc-url sepolia --broadcast
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees --sig "runStatus()" --rpc-url sepolia
+forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault --sig "runStatus()" --rpc-url sepolia
 forge script script/admin/UpdateAdapters.s.sol --account deployer --rpc-url sepolia --broadcast
 forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url sepolia --broadcast
 forge script script/admin/ManageUniswapV4Pools.s.sol --account deployer --rpc-url sepolia --broadcast

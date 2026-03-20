@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "../../src/MoksaRouter.sol";
+import "../../src/FeeVault.sol";
 import "../../src/adapters/UniswapV2Adapter.sol";
 import "../../src/adapters/UniswapV3Adapter.sol";
 import "../../src/adapters/PancakeV3Adapter.sol";
@@ -35,6 +36,35 @@ contract DeployUpgradeable is Script {
 
         console.log("MoksaRouter implementation:", implementation);
         console.log("MoksaRouter proxy:", proxy);
+
+        vm.stopBroadcast();
+    }
+
+    function runFeeVault(string calldata prefix) external {
+        vm.startBroadcast();
+
+        address implementation = address(new FeeVault());
+        bytes memory initData = abi.encodeCall(
+            FeeVault.initialize,
+            (
+                vm.envOr(_key(prefix, "FEE_VAULT_ROUTER"), address(0)),
+                vm.envOr(_key(prefix, "FEE_VAULT_EXECUTOR"), address(0)),
+                vm.envAddress(_key(prefix, "USDC")),
+                vm.envAddress(_key(prefix, "INITIAL_MAINTAINER")),
+                vm.envOr(_key(prefix, "RECOVERY_RECIPIENT"), address(0)),
+                vm.envOr(_key(prefix, "RECOVERY_CAP_USDC"), uint256(0)),
+                vm.envOr(_key(prefix, "DEVELOPMENT_RECIPIENT"), address(0)),
+                vm.envOr(_key(prefix, "DEVELOPMENT_CAP_USDC"), uint256(0)),
+                vm.envOr(_key(prefix, "POST_CAP_COMPANY_RECIPIENT"), address(0)),
+                vm.envOr(_key(prefix, "PROTOCOL_RECIPIENT"), address(0)),
+                vm.envOr(_key(prefix, "POST_CAP_COMPANY_BPS"), uint256(0))
+            )
+        );
+        address proxy = _deployProxy(implementation, initData);
+        _configureFeeVault(prefix, FeeVault(payable(proxy)));
+
+        console.log("FeeVault implementation:", implementation);
+        console.log("FeeVault proxy:", proxy);
 
         vm.stopBroadcast();
     }
@@ -213,14 +243,14 @@ contract DeployUpgradeable is Script {
     }
 
     function _configureRouter(string calldata prefix, MoksaRouter router) internal {
-        address companyFeeClaimer = vm.envOr(_key(prefix, "COMPANY_FEE_CLAIMER"), address(0));
-        if (companyFeeClaimer != address(0)) {
-            router.setCompanyFeeClaimer(companyFeeClaimer);
-        }
-
         address operationsFeeClaimer = vm.envOr(_key(prefix, "OPERATIONS_FEE_CLAIMER"), address(0));
         if (operationsFeeClaimer != address(0)) {
             router.setOperationsFeeClaimer(operationsFeeClaimer);
+        }
+
+        address feeVault = vm.envOr(_key(prefix, "FEE_VAULT"), address(0));
+        if (feeVault != address(0)) {
+            router.setFeeVault(feeVault);
         }
 
         uint256 minFee = vm.envOr(_key(prefix, "ROUTER_MIN_FEE"), uint256(0));
@@ -232,37 +262,52 @@ contract DeployUpgradeable is Script {
         if (operationsFeeBps > 0) {
             router.setOperationsFeeBps(operationsFeeBps);
         }
-
-        bool companyPreCapEnabled = vm.envOr(_key(prefix, "COMPANY_PRE_CAP_ENABLED"), true);
-        if (!companyPreCapEnabled) {
-            router.setCompanyPreCapEnabled(false);
-        }
-
-        uint256 companyPostCapFeeBps = vm.envOr(_key(prefix, "COMPANY_POST_CAP_FEE_BPS"), uint256(0));
-        if (companyPostCapFeeBps > 0) {
-            router.setCompanyPostCapFeeBps(companyPostCapFeeBps);
-        }
-
-        uint256 companyFeeCapUsd = vm.envOr(_key(prefix, "COMPANY_FEE_CAP_USD"), uint256(0));
-        if (companyFeeCapUsd > 0) {
-            router.setCompanyFeeCapUsd(companyFeeCapUsd);
-        }
-
-        uint256 priceFeedStaleness = vm.envOr(_key(prefix, "PRICE_FEED_STALENESS"), uint256(0));
-        if (priceFeedStaleness > 0) {
-            router.setPriceFeedStaleness(priceFeedStaleness);
-        }
-
-        _configureRouterPriceFeeds(prefix, router);
     }
 
-    function _configureRouterPriceFeeds(string calldata prefix, MoksaRouter router) internal {
-        uint256 count = vm.envOr(_key(prefix, "ROUTER_FEE_PRICE_FEED_COUNT"), uint256(0));
+    function _configureFeeVault(string calldata prefix, FeeVault feeVault) internal {
+        address router = vm.envOr(_key(prefix, "FEE_VAULT_ROUTER"), address(0));
+        if (router != address(0)) {
+            feeVault.setRouter(router);
+        }
 
-        for (uint256 i = 0; i < count; i++) {
-            address token = vm.envAddress(string.concat(_key(prefix, "ROUTER_FEE_PRICE_FEED_TOKEN"), "_", vm.toString(i)));
-            address feed = vm.envAddress(string.concat(_key(prefix, "ROUTER_FEE_PRICE_FEED"), "_", vm.toString(i)));
-            router.setFeePriceFeed(token, feed);
+        address executor = vm.envOr(_key(prefix, "FEE_VAULT_EXECUTOR"), address(0));
+        if (executor != address(0)) {
+            feeVault.setExecutor(executor);
+        }
+
+        address recoveryRecipient = vm.envOr(_key(prefix, "RECOVERY_RECIPIENT"), address(0));
+        if (recoveryRecipient != address(0)) {
+            feeVault.setRecoveryRecipient(recoveryRecipient);
+        }
+
+        uint256 recoveryCapUsdc = vm.envOr(_key(prefix, "RECOVERY_CAP_USDC"), uint256(0));
+        if (recoveryCapUsdc > 0) {
+            feeVault.setRecoveryCapUsdc(recoveryCapUsdc);
+        }
+
+        address developmentRecipient = vm.envOr(_key(prefix, "DEVELOPMENT_RECIPIENT"), address(0));
+        if (developmentRecipient != address(0)) {
+            feeVault.setDevelopmentRecipient(developmentRecipient);
+        }
+
+        uint256 developmentCapUsdc = vm.envOr(_key(prefix, "DEVELOPMENT_CAP_USDC"), uint256(0));
+        if (developmentCapUsdc > 0) {
+            feeVault.setDevelopmentCapUsdc(developmentCapUsdc);
+        }
+
+        address postCapCompanyRecipient = vm.envOr(_key(prefix, "POST_CAP_COMPANY_RECIPIENT"), address(0));
+        if (postCapCompanyRecipient != address(0)) {
+            feeVault.setPostCapCompanyRecipient(postCapCompanyRecipient);
+        }
+
+        address protocolRecipient = vm.envOr(_key(prefix, "PROTOCOL_RECIPIENT"), address(0));
+        if (protocolRecipient != address(0)) {
+            feeVault.setProtocolRecipient(protocolRecipient);
+        }
+
+        uint256 postCapCompanyBps = vm.envOr(_key(prefix, "POST_CAP_COMPANY_BPS"), uint256(0));
+        if (postCapCompanyBps > 0) {
+            feeVault.setPostCapCompanyBps(postCapCompanyBps);
         }
     }
 

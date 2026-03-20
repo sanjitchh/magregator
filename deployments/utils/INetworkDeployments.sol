@@ -5,6 +5,7 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 
 interface INetworkDeployments {
     function getRouter() external view returns (address);
+    function getFeeVault() external view returns (address);
     function getWhitelistedAdapters() external view returns (address[] memory);
     function getWhitelistedHopTokens() external view returns (address[] memory);
     function getNetworkName() external view returns (string memory);
