@@ -92,7 +92,7 @@ prompt_enabled_disabled() {
 prompt_bool() {
   local prompt="$1"
   local value=''
-  echo "$prompt"
+  printf '%s\n' "$prompt" >&2
   select choice in enabled disabled; do
     case "$choice" in
       enabled)
@@ -103,7 +103,7 @@ prompt_bool() {
         value=false
         break
         ;;
-      *) echo "Invalid option" ;;
+      *) printf '%s\n' "Invalid option" >&2 ;;
     esac
   done
   printf '%s' "$value"
