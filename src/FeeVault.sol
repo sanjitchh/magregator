@@ -138,6 +138,7 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
     function executeAndDistribute(VaultCall[] calldata _calls, uint256 _minUsdcOut) external override returns (uint256) {
         require(_isExecutorOrMaintainer(msg.sender), "FeeVault: Caller is not authorized");
 
+        uint256 pendingBefore = _pendingUsdcTotal();
         uint256 usdcBefore = IERC20(USDC).balanceOf(address(this));
 
         for (uint256 i = 0; i < _calls.length; i++) {
@@ -158,8 +159,12 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
         uint256 usdcAfter = IERC20(USDC).balanceOf(address(this));
         uint256 usdcRecovered = usdcAfter - usdcBefore;
         require(usdcRecovered >= _minUsdcOut, "FeeVault: Insufficient USDC output");
+        require(usdcAfter >= pendingBefore, "FeeVault: Pending USDC exceeds balance");
 
-        _allocateRecoveredUsdc(usdcRecovered);
+        uint256 allocatableUsdc = usdcAfter - pendingBefore;
+        if (allocatableUsdc > 0) {
+            _allocateRecoveredUsdc(allocatableUsdc);
+        }
         _distributePendingUsdcInternal();
 
         emit ConversionBatchExecuted(_calls.length, usdcRecovered);
@@ -184,6 +189,10 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
         }
 
         return DEVELOPMENT_CAP_USDC - developmentAccruedUsdc;
+    }
+
+    function _pendingUsdcTotal() internal view returns (uint256) {
+        return pendingRecoveryUsdc + pendingDevelopmentUsdc + pendingPostCapCompanyUsdc + pendingProtocolUsdc;
     }
 
     function _allocateRecoveredUsdc(uint256 _usdcRecovered) internal {

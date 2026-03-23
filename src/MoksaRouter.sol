@@ -260,6 +260,25 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         _transferTokenOut(_token, FEE_VAULT, _amount);
         emit FeeVaultDeposited(_token, FEE_VAULT, _amount);
     }
+
+    function _isConfiguredAdapter(address _adapter) internal view returns (bool) {
+        for (uint256 i = 0; i < ADAPTERS.length; i++) {
+            if (ADAPTERS[i] == _adapter) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function _validateTradeAdapters(Trade calldata _trade) internal view {
+        require(_trade.adapters.length != 0, "MoksaRouter: Missing adapters");
+        require(_trade.path.length == _trade.adapters.length + 1, "MoksaRouter: Invalid trade path");
+
+        for (uint256 i = 0; i < _trade.adapters.length; i++) {
+            require(_isConfiguredAdapter(_trade.adapters[i]), "MoksaRouter: Unknown adapter");
+        }
+    }
     
     // -- QUERIES --
 
@@ -445,6 +464,8 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         address _to,
         uint256 _fee
     ) internal returns (uint256) {
+        _validateTradeAdapters(_trade);
+
         uint256[] memory amounts = new uint256[](_trade.path.length);
         if (_fee > 0 || MIN_FEE > 0) {
             // Transfer fees to the claimer account and decrease initial amount
@@ -489,6 +510,7 @@ contract MoksaRouter is Initializable, UUPSUpgradeable, Maintainable, Recoverabl
         uint256 _fee
     ) override external payable {
         require(_trade.path[0] == WNATIVE, "MoksaRouter: Path needs to begin with wrapped native");
+        require(msg.value == _trade.amountIn, "MoksaRouter: Incorrect native amount");
         _wrap(_trade.amountIn);
         _swapNoSplit(_trade, address(this), _to, _fee);
     }

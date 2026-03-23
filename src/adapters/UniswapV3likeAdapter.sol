@@ -123,6 +123,10 @@ abstract contract UniswapV3likeAdapter is MoksaAdapter {
         bytes memory callbackData
     ) internal virtual returns (uint256) {
         address pool = getBestPool(params.tokenIn, params.tokenOut);
+        require(pool != address(0), "Pool not found");
+        if (callbackData.length == 0) {
+            callbackData = _encodeSwapCallbackData(params.tokenIn, params.tokenOut, pool);
+        }
         (bool zeroForOne, uint160 priceLimit) = getZeroOneAndSqrtPriceLimitX96(
             params.tokenIn, 
             params.tokenOut
@@ -137,6 +141,29 @@ abstract contract UniswapV3likeAdapter is MoksaAdapter {
         return zeroForOne ? uint256(-amount1) : uint256(-amount0);
     }
 
+    function _encodeSwapCallbackData(
+        address tokenIn,
+        address tokenOut,
+        address pool
+    ) internal pure returns (bytes memory) {
+        return abi.encode(tokenIn, tokenOut, pool);
+    }
+
+    function _validateSwapCallback(bytes calldata callbackData) internal view returns (address pool) {
+        require(callbackData.length == 96, "Invalid callback data");
+
+        (address tokenIn, address tokenOut, address expectedPool) = abi.decode(
+            callbackData,
+            (address, address, address)
+        );
+
+        require(expectedPool != address(0), "Invalid callback pool");
+        require(_isValidCallbackPool(tokenIn, tokenOut, expectedPool), "Invalid callback pool");
+        require(msg.sender == expectedPool, "Invalid callback caller");
+
+        return expectedPool;
+    }
+
     function getQuoteForBestPool(
         QParams memory params
     ) internal view returns (uint256 quote) {
@@ -148,6 +175,12 @@ abstract contract UniswapV3likeAdapter is MoksaAdapter {
         address token0, 
         address token1
     ) internal view virtual returns (address mostLiquid);
+
+    function _isValidCallbackPool(
+        address tokenIn,
+        address tokenOut,
+        address pool
+    ) internal view virtual returns (bool);
     
     function getQuoteForPool(
         address pool, 

@@ -124,10 +124,11 @@ Under `admin -> router-fees` you can access:
 - `router-set-operations-fee-claimer`
 - `router-set-operations-fee-bps`
 - `router-claim-operations-fees`
-- `router-claim-company-fees`
-- `router-claim-protocol-fees`
 
 These actions are backed by `script/admin/ManageRouterFees.s.sol`.
+Legacy company/protocol claim helpers remain available in `script/admin/ManageRouterFees.s.sol` as
+`runClaimLegacyCompanyFees` and `runClaimLegacyProtocolFees` for historical router balances only; they are not part of the
+active fee-vault flow.
 
 ### Fee vault management
 
@@ -207,14 +208,6 @@ forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
 
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
   --sig "runClaimOperationsFees(address,uint256)" \
-  0xYourFeeToken \
-  1000000 \
-  --rpc-url monad \
-  --private-key "$MONAD_PK_DEPLOYER" \
-  --broadcast
-
-forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees \
-  --sig "runClaimProtocolFees(address,uint256)" \
   0xYourFeeToken \
   1000000 \
   --rpc-url monad \

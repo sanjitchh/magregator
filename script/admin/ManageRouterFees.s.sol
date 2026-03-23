@@ -133,13 +133,14 @@ contract ManageRouterFees is Script {
         console.log("Router operations fees claimed successfully");
     }
 
-    function runClaimCompanyFees(address token, uint256 amount) external {
+    // Legacy helper for historical router balances accrued before the fee vault flow.
+    function runClaimLegacyCompanyFees(address token, uint256 amount) external {
         (INetworkDeployments deployments, MoksaRouter router) = _router();
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
         console.log("Token:", token);
-        console.log("Legacy company reserved:", router.COMPANY_RESERVED_FEES(token));
+        console.log("Legacy company reserved (historical only):", router.COMPANY_RESERVED_FEES(token));
         console.log("Amount:", amount);
 
         vm.startBroadcast();
@@ -149,13 +150,14 @@ contract ManageRouterFees is Script {
         console.log("Router legacy company fees claimed successfully");
     }
 
-    function runClaimProtocolFees(address token, uint256 amount) external {
+    // Legacy helper for historical router balances accrued before the fee vault flow.
+    function runClaimLegacyProtocolFees(address token, uint256 amount) external {
         (INetworkDeployments deployments, MoksaRouter router) = _router();
 
         console.log("Network:", deployments.getNetworkName());
         console.log("Router:", address(router));
         console.log("Token:", token);
-        console.log("Legacy protocol reserved:", router.PROTOCOL_RESERVED_FEES(token));
+        console.log("Legacy protocol reserved (historical only):", router.PROTOCOL_RESERVED_FEES(token));
         console.log("Amount:", amount);
 
         vm.startBroadcast();

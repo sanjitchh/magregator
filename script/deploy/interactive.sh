@@ -266,7 +266,7 @@ select_upgrade_action() {
 
 select_admin_router_action() {
   echo "Choose router admin action:"
-  select c in fee-status native-balance token-balance set-fee-vault set-fee-claimer set-company-fee-claimer set-operations-fee-claimer set-operations-fee-bps claim-operations-fees claim-company-fees claim-protocol-fees back; do
+  select c in fee-status native-balance token-balance set-fee-vault set-fee-claimer set-company-fee-claimer set-operations-fee-claimer set-operations-fee-bps claim-operations-fees back; do
     case "$c" in
       fee-status)
         reset_action_config
@@ -343,30 +343,6 @@ select_admin_router_action() {
         MUTATES_STATE=1
         EXTRA_ARGS=(
           "$(prompt_address 'Fee token address (use 0x0000000000000000000000000000000000000000 for native)')"
-          "$(prompt_uint 'Amount in token base units')"
-        )
-        return 0
-        ;;
-      claim-company-fees)
-        reset_action_config
-        ACTION_LABEL='claim router company fees'
-        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runClaimCompanyFees(address,uint256)'
-        MUTATES_STATE=1
-        EXTRA_ARGS=(
-          "$(prompt_token_address)"
-          "$(prompt_uint 'Amount in token base units')"
-        )
-        return 0
-        ;;
-      claim-protocol-fees)
-        reset_action_config
-        ACTION_LABEL='claim router protocol fees'
-        SCRIPT_TARGET='script/admin/ManageRouterFees.s.sol:ManageRouterFees'
-        SIG='runClaimProtocolFees(address,uint256)'
-        MUTATES_STATE=1
-        EXTRA_ARGS=(
-          "$(prompt_token_address)"
           "$(prompt_uint 'Amount in token base units')"
         )
         return 0

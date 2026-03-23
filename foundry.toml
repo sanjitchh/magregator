@@ -11,12 +11,12 @@ via_ir = true
 gas_reports = ["*"]
 
 remappings = [
-    "@openzeppelin/contracts/=dependencies/@openzeppelin-contracts-4.9.6/",
-    "@solady/=dependencies/solady/src",
-    "@uniswap/v4-core/=dependencies/v4-core/",
-    "@uniswap/v4-periphery/=dependencies/v4-periphery/",
-    "forge-std/=dependencies/forge-std-1.9.7/src/",
-]
+      "@openzeppelin/contracts/=dependencies/@openzeppelin-contracts-4.9.6/contracts/",
+      "@solady/=dependencies/solady/src/",
+      "@uniswap/v4-core/=dependencies/v4-core/",
+      "@uniswap/v4-periphery/=dependencies/v4-periphery/",
+      "forge-std/=dependencies/forge-std-1.9.7/src/",
+  ]
 
 [rpc_endpoints]
 monad = "${MONAD_RPC}"

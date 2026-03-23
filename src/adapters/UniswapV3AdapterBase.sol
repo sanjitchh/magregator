@@ -72,4 +72,18 @@ contract UniswapV3AdapterBase is UniswapV3likeAdapter {
             }
         }
     }
+
+    function _isValidCallbackPool(
+        address tokenIn,
+        address tokenOut,
+        address pool
+    ) internal view override returns (bool) {
+        for (uint256 i; i < feeAmounts.length; ++i) {
+            if (IUniV3Factory(FACTORY).getPool(tokenIn, tokenOut, feeAmounts[i]) == pool) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

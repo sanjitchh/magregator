@@ -66,6 +66,10 @@ contract KyberElasticAdapter is UniswapV3likeAdapter {
         bytes memory callbackData
     ) internal override returns (uint256) {
         address pool = getBestPool(params.tokenIn, params.tokenOut);
+        require(pool != address(0), "Pool not found");
+        if (callbackData.length == 0) {
+            callbackData = _encodeSwapCallbackData(params.tokenIn, params.tokenOut, pool);
+        }
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = 
             getZeroOneAndSqrtPriceLimitX96(params.tokenIn, params.tokenOut);
         (int256 amount0, int256 amount1) = IKyberPool(pool).swap(
@@ -85,15 +89,25 @@ contract KyberElasticAdapter is UniswapV3likeAdapter {
         return tknsToPoolWL[token0][token1];
     }
 
+    function _isValidCallbackPool(
+        address tokenIn,
+        address tokenOut,
+        address pool
+    ) internal view override returns (bool) {
+        return pool != address(0) && tknsToPoolWL[tokenIn][tokenOut] == pool;
+    }
+
     function swapCallback(
         int256 amount0Delta,
         int256 amount1Delta,
-        bytes calldata
+        bytes calldata data
     ) external {
+        address pool = _validateSwapCallback(data);
+
         if (amount0Delta > 0) {
-            IERC20(IKyberPool(msg.sender).token0()).transfer(msg.sender, uint256(amount0Delta));
-        } else {
-            IERC20(IKyberPool(msg.sender).token1()).transfer(msg.sender, uint256(amount1Delta));
+            IERC20(IKyberPool(pool).token0()).transfer(pool, uint256(amount0Delta));
+        } else if (amount1Delta > 0) {
+            IERC20(IKyberPool(pool).token1()).transfer(pool, uint256(amount1Delta));
         }
     }
 }

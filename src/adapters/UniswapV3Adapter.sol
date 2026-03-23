@@ -32,12 +32,14 @@ contract UniswapV3Adapter is UniswapV3AdapterBase {
     function uniswapV3SwapCallback(
         int256 amount0Delta,
         int256 amount1Delta,
-        bytes calldata
+        bytes calldata data
     ) external {
+        address pool = _validateSwapCallback(data);
+
         if (amount0Delta > 0) {
-            IERC20(IUniV3Pool(msg.sender).token0()).transfer(msg.sender, uint256(amount0Delta));
-        } else {
-            IERC20(IUniV3Pool(msg.sender).token1()).transfer(msg.sender, uint256(amount1Delta));
+            IERC20(IUniV3Pool(pool).token0()).transfer(pool, uint256(amount0Delta));
+        } else if (amount1Delta > 0) {
+            IERC20(IUniV3Pool(pool).token1()).transfer(pool, uint256(amount1Delta));
         }
     }
 }
