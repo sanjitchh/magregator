@@ -73,8 +73,8 @@ Use the interactive wrapper for deployments, upgrades, admin changes, and read-o
 
 The menu is grouped to keep actions manageable:
 
-- `deploy` - deploy router, adapters, and the V3 static quoter
-- `upgrade` - upgrade existing router, fee vault, and adapter proxy contracts
+- `deploy` - deploy router, fee vault, the V3 static quoter, and adapters through a dedicated `adapters` submenu
+- `upgrade` - upgrade existing router, fee vault, and adapter proxy contracts through a dedicated `adapters` submenu
 - `admin` - apply on-chain config changes
 - `inspect` - run read-only checks
 
@@ -87,7 +87,7 @@ Typical flow:
 
 If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEPLOYER` in `.env`.
 
-Adapter upgrades in the interactive menu now resolve the known proxy address from `deployments/*.sol`, just like router and fee vault upgrades. You do not need an `.env` entry for the proxy address unless you want to call the manual override entrypoint yourself.
+Adapter upgrades in the interactive menu now live under `upgrade -> adapters` and resolve the known proxy address from `deployments/*.sol`, just like router and fee vault upgrades. You do not need an `.env` entry for the proxy address unless you want to call the manual override entrypoint yourself.
 Example:
 
 ```bash

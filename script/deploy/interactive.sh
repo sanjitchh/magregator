@@ -136,27 +136,56 @@ select_group() {
 }
 
 select_deploy_action() {
-  echo "Choose deploy action:"
-  select c in router feevault uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru v3staticquoter back; do
+  while true; do
+    echo "Choose deploy action:"
+    select c in router feevault adapters v3staticquoter back; do
+      case "$c" in
+        router)
+          reset_action_config
+          ACTION_LABEL='deploy router'
+          SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+          SIG='runRouter(string)'
+          NEEDS_PREFIX=1
+          MUTATES_STATE=1
+          return 0
+          ;;
+        feevault)
+          reset_action_config
+          ACTION_LABEL='deploy fee vault'
+          SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+          SIG='runFeeVault(string)'
+          NEEDS_PREFIX=1
+          MUTATES_STATE=1
+          return 0
+          ;;
+        adapters)
+          if select_deploy_adapter_action; then
+            return 0
+          fi
+          break
+          ;;
+        v3staticquoter)
+          reset_action_config
+          ACTION_LABEL='deploy v3 static quoter'
+          SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+          SIG='runUniswapV3StaticQuoter()'
+          MUTATES_STATE=1
+          return 0
+          ;;
+        back)
+          select_group
+          return 0
+          ;;
+        *) echo "Invalid option" ;;
+      esac
+    done
+  done
+}
+
+select_deploy_adapter_action() {
+  echo "Choose adapter deploy action:"
+  select c in uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru back; do
     case "$c" in
-      router)
-        reset_action_config
-        ACTION_LABEL='deploy router'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runRouter(string)'
-        NEEDS_PREFIX=1
-        MUTATES_STATE=1
-        break
-        ;;
-      feevault)
-        reset_action_config
-        ACTION_LABEL='deploy fee vault'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runFeeVault(string)'
-        NEEDS_PREFIX=1
-        MUTATES_STATE=1
-        break
-        ;;
       uniswapv2)
         reset_action_config
         ACTION_LABEL='deploy uniswapv2 adapter'
@@ -164,7 +193,7 @@ select_deploy_action() {
         SIG='runUniswapV2(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       uniswapv3)
         reset_action_config
@@ -173,7 +202,7 @@ select_deploy_action() {
         SIG='runUniswapV3(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       pancakev3)
         reset_action_config
@@ -182,7 +211,7 @@ select_deploy_action() {
         SIG='runPancakeV3(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       kyber)
         reset_action_config
@@ -191,7 +220,7 @@ select_deploy_action() {
         SIG='runKyberElastic(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       uniswapv4)
         reset_action_config
@@ -200,7 +229,7 @@ select_deploy_action() {
         SIG='runUniswapV4(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       wnative)
         reset_action_config
@@ -209,7 +238,7 @@ select_deploy_action() {
         SIG='runWNative(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       kuru)
         reset_action_config
@@ -218,19 +247,10 @@ select_deploy_action() {
         SIG='runKuru(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
-        break
-        ;;
-      v3staticquoter)
-        reset_action_config
-        ACTION_LABEL='deploy v3 static quoter'
-        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-        SIG='runUniswapV3StaticQuoter()'
-        MUTATES_STATE=1
-        break
+        return 0
         ;;
       back)
-        select_group
-        break
+        return 1
         ;;
       *) echo "Invalid option" ;;
     esac
@@ -238,30 +258,51 @@ select_deploy_action() {
 }
 
 select_upgrade_action() {
-  echo "Choose upgrade action:"
-  select c in router feevault uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru back; do
+  while true; do
+    echo "Choose upgrade action:"
+    select c in router feevault adapters back; do
+      case "$c" in
+        router)
+          reset_action_config
+          ACTION_LABEL='upgrade router'
+          SCRIPT_TARGET='script/admin/UpgradeRouter.s.sol:UpgradeRouter'
+          MUTATES_STATE=1
+          return 0
+          ;;
+        feevault)
+          reset_action_config
+          ACTION_LABEL='upgrade fee vault'
+          SCRIPT_TARGET='script/admin/UpgradeFeeVault.s.sol:UpgradeFeeVault'
+          MUTATES_STATE=1
+          return 0
+          ;;
+        adapters)
+          if select_upgrade_adapter_action; then
+            return 0
+          fi
+          break
+          ;;
+        back)
+          select_group
+          return 0
+          ;;
+        *) echo "Invalid option" ;;
+      esac
+    done
+  done
+}
+
+select_upgrade_adapter_action() {
+  echo "Choose adapter upgrade action:"
+  select c in uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru back; do
     case "$c" in
-      router)
-        reset_action_config
-        ACTION_LABEL='upgrade router'
-        SCRIPT_TARGET='script/admin/UpgradeRouter.s.sol:UpgradeRouter'
-        MUTATES_STATE=1
-        break
-        ;;
-      feevault)
-        reset_action_config
-        ACTION_LABEL='upgrade fee vault'
-        SCRIPT_TARGET='script/admin/UpgradeFeeVault.s.sol:UpgradeFeeVault'
-        MUTATES_STATE=1
-        break
-        ;;
       uniswapv2)
         reset_action_config
         ACTION_LABEL='upgrade uniswapv2 adapter'
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runUniswapV2()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       uniswapv3)
         reset_action_config
@@ -269,7 +310,7 @@ select_upgrade_action() {
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runUniswapV3()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       pancakev3)
         reset_action_config
@@ -277,7 +318,7 @@ select_upgrade_action() {
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runPancakeV3()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       kyber)
         reset_action_config
@@ -285,7 +326,7 @@ select_upgrade_action() {
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runKyberElastic()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       uniswapv4)
         reset_action_config
@@ -293,7 +334,7 @@ select_upgrade_action() {
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runUniswapV4()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       wnative)
         reset_action_config
@@ -301,7 +342,7 @@ select_upgrade_action() {
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runWNative()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       kuru)
         reset_action_config
@@ -309,11 +350,10 @@ select_upgrade_action() {
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runKuru()'
         MUTATES_STATE=1
-        break
+        return 0
         ;;
       back)
-        select_group
-        break
+        return 1
         ;;
       *) echo "Invalid option" ;;
     esac
