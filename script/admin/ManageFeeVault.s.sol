@@ -6,6 +6,7 @@ import {console} from "forge-std/console.sol";
 import {DeploymentFactory} from "../../deployments/utils/DeploymentFactory.sol";
 import {INetworkDeployments} from "../../deployments/utils/INetworkDeployments.sol";
 import {FeeVault} from "../../src/FeeVault.sol";
+import {VaultCall} from "../../src/interface/IFeeVault.sol";
 import {IERC20} from "../../src/interface/IERC20.sol";
 
 contract ManageFeeVault is Script {
@@ -235,6 +236,19 @@ contract ManageFeeVault is Script {
         vm.stopBroadcast();
 
         console.log("FeeVault pending USDC distributed successfully");
+    }
+
+    function runAllocateAndDistributeUsdc() external {
+        (INetworkDeployments deployments, FeeVault vault) = _vault();
+
+        console.log("Network:", deployments.getNetworkName());
+        console.log("FeeVault:", address(vault));
+
+        vm.startBroadcast();
+        vault.executeAndDistribute(new VaultCall[](0), 0);
+        vm.stopBroadcast();
+
+        console.log("FeeVault existing USDC allocated and distributed successfully");
     }
 
     function _vault() internal returns (INetworkDeployments deployments, FeeVault vault) {

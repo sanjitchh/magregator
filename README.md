@@ -74,7 +74,7 @@ Use the interactive wrapper for deployments, upgrades, admin changes, and read-o
 The menu is grouped to keep actions manageable:
 
 - `deploy` - deploy router, adapters, and the V3 static quoter
-- `upgrade` - upgrade existing proxy contracts
+- `upgrade` - upgrade existing router, fee vault, and adapter proxy contracts
 - `admin` - apply on-chain config changes
 - `inspect` - run read-only checks
 
@@ -86,6 +86,17 @@ Typical flow:
 4. Confirm broadcast if the action mutates state
 
 If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEPLOYER` in `.env`.
+
+Adapter upgrades in the interactive menu now resolve the known proxy address from `deployments/*.sol`, just like router and fee vault upgrades. You do not need an `.env` entry for the proxy address unless you want to call the manual override entrypoint yourself.
+Example:
+
+```bash
+forge script script/admin/UpgradeAdapters.s.sol:UpgradeAdapters \
+  --sig "runUniswapV3()" \
+  --rpc-url sepolia \
+  --private-key "$SEPOLIA_PK_DEPLOYER" \
+  --broadcast
+```
 
 Fresh router deployments also pick up optional fee-routing settings from `.env` automatically. Supported keys are:
 
@@ -148,9 +159,12 @@ Under `admin -> fee-vault` you can access:
 - `vault-set-postcap-company-bps`
 - `vault-set-allowed-target`
 - `vault-set-token-approval`
+- `vault-allocate-and-distribute-usdc`
 - `vault-distribute-pending-usdc`
 
 These actions are backed by `script/admin/ManageFeeVault.s.sol`.
+
+Use `vault-allocate-and-distribute-usdc` when the fee vault already holds raw USDC and you want to allocate that balance into the configured buckets and distribute it in one transaction. `vault-distribute-pending-usdc` only sends amounts already recorded in the pending bucket state.
 
 Under `admin -> sync-tools` you can access:
 

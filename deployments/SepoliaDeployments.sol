@@ -10,6 +10,8 @@ contract SepoliaDeployments is INetworkDeployments {
     // Fill these addresses after deploying upgradeable router and adapters on Sepolia.
     address constant ROUTER = 0x009B03c9DCc4B54022188207ca17fF3303D6055F;
     address constant FEE_VAULT = 0x0E0BCF47459958625B49d4a6daD03301A6480BB5;
+    address constant UNISWAP_V2_ADAPTER = address(0);
+    // Current UniswapV3 implementation after Sepolia upgrade: 0xc4446028922a1b612a009DFA258eD309438dfcc5.
     address constant UNISWAP_V3_ADAPTER = 0x7caF364caA220D606cd68Ca9960DE4e05cb27158;
     address constant PANCAKE_V3_ADAPTER = 0xBbb32C5436889d34F92bCEeB4805D60af3952B5d;
     address constant KURU_ADAPTER = address(0);
@@ -31,6 +33,30 @@ contract SepoliaDeployments is INetworkDeployments {
 
     function getFeeVault() public pure override returns (address) {
         return FEE_VAULT;
+    }
+
+    function getUniswapV2Adapter() public pure override returns (address) {
+        return UNISWAP_V2_ADAPTER;
+    }
+
+    function getUniswapV3Adapter() public pure override returns (address) {
+        return UNISWAP_V3_ADAPTER;
+    }
+
+    function getPancakeV3Adapter() public pure override returns (address) {
+        return PANCAKE_V3_ADAPTER;
+    }
+
+    function getKyberElasticAdapter() public pure override returns (address) {
+        return KYBER_ELASTIC_ADAPTER;
+    }
+
+    function getWNativeAdapter() public pure override returns (address) {
+        return WNATIVE_ADAPTER;
+    }
+
+    function getKuruAdapter() public pure override returns (address) {
+        return KURU_ADAPTER;
     }
 
     function getWhitelistedAdapters() public pure override returns (address[] memory) {

@@ -46,6 +46,7 @@ abstract contract UniswapV3likeAdapter is MoksaAdapter {
 
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
     uint160 internal constant MIN_SQRT_RATIO = 4295128739;
+    uint256 internal constant QUOTE_SAFETY_DIVISOR = 10_000;
     uint256 public quoterGasLimit;
     address public quoter;
 
@@ -196,7 +197,21 @@ abstract contract UniswapV3likeAdapter is MoksaAdapter {
             params.amountIn,
             priceLimit
         );
-        return zeroForOne ? uint256(-amount1) : uint256(-amount0);
+        uint256 rawQuote = zeroForOne ? uint256(-amount1) : uint256(-amount0);
+        return _applyQuoteSafetyMargin(rawQuote);
+    }
+
+    function _applyQuoteSafetyMargin(uint256 rawQuote) internal pure returns (uint256) {
+        if (rawQuote == 0) {
+            return 0;
+        }
+
+        uint256 margin = rawQuote / QUOTE_SAFETY_DIVISOR;
+        if (margin == 0) {
+            margin = 1;
+        }
+
+        return rawQuote > margin ? rawQuote - margin : 0;
     }
 
     function getQuoteSafe(

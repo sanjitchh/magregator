@@ -239,7 +239,7 @@ select_deploy_action() {
 
 select_upgrade_action() {
   echo "Choose upgrade action:"
-  select c in router feevault back; do
+  select c in router feevault uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru back; do
     case "$c" in
       router)
         reset_action_config
@@ -252,6 +252,62 @@ select_upgrade_action() {
         reset_action_config
         ACTION_LABEL='upgrade fee vault'
         SCRIPT_TARGET='script/admin/UpgradeFeeVault.s.sol:UpgradeFeeVault'
+        MUTATES_STATE=1
+        break
+        ;;
+      uniswapv2)
+        reset_action_config
+        ACTION_LABEL='upgrade uniswapv2 adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runUniswapV2()'
+        MUTATES_STATE=1
+        break
+        ;;
+      uniswapv3)
+        reset_action_config
+        ACTION_LABEL='upgrade uniswapv3 adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runUniswapV3()'
+        MUTATES_STATE=1
+        break
+        ;;
+      pancakev3)
+        reset_action_config
+        ACTION_LABEL='upgrade pancakev3 adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runPancakeV3()'
+        MUTATES_STATE=1
+        break
+        ;;
+      kyber)
+        reset_action_config
+        ACTION_LABEL='upgrade kyber adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runKyberElastic()'
+        MUTATES_STATE=1
+        break
+        ;;
+      uniswapv4)
+        reset_action_config
+        ACTION_LABEL='upgrade uniswapv4 adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runUniswapV4()'
+        MUTATES_STATE=1
+        break
+        ;;
+      wnative)
+        reset_action_config
+        ACTION_LABEL='upgrade wnative adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runWNative()'
+        MUTATES_STATE=1
+        break
+        ;;
+      kuru)
+        reset_action_config
+        ACTION_LABEL='upgrade kuru adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runKuru()'
         MUTATES_STATE=1
         break
         ;;
@@ -357,7 +413,7 @@ select_admin_router_action() {
 
 select_admin_vault_action() {
   echo "Choose fee vault admin action:"
-  select c in status token-balance set-router set-executor set-usdc set-recovery-recipient set-recovery-cap-usdc set-development-recipient set-development-cap-usdc set-postcap-company-recipient set-protocol-recipient set-postcap-company-bps set-allowed-target set-token-approval distribute-pending-usdc back; do
+  select c in status token-balance set-router set-executor set-usdc set-recovery-recipient set-recovery-cap-usdc set-development-recipient set-development-cap-usdc set-postcap-company-recipient set-protocol-recipient set-postcap-company-bps set-allowed-target set-token-approval allocate-and-distribute-usdc distribute-pending-usdc back; do
     case "$c" in
       status)
         reset_action_config
@@ -487,6 +543,14 @@ select_admin_vault_action() {
           "$(prompt_address 'Approved spender address')"
           "$(prompt_uint 'Approval amount in token base units')"
         )
+        return 0
+        ;;
+      allocate-and-distribute-usdc)
+        reset_action_config
+        ACTION_LABEL='allocate and distribute existing fee vault usdc'
+        SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
+        SIG='runAllocateAndDistributeUsdc()'
+        MUTATES_STATE=1
         return 0
         ;;
       distribute-pending-usdc)
