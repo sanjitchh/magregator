@@ -98,7 +98,11 @@ contract MonadDeployments is INetworkDeployments {
     }
 
     function getWhitelistedHopTokens() public pure override returns (address[] memory) {
-        return new address[](0);
+        address[] memory tokens = new address[](3);
+        tokens[0] = 0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A; // WMON
+        tokens[1] = 0x754704Bc059F8C67012fEd69BC8A327a5aafb603; // USDC
+        tokens[2] = 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a; // aUSD
+        return tokens;
     }
 
     function getUniswapV4Adapter() public pure override returns (address) {
