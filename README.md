@@ -87,6 +87,8 @@ Typical flow:
 
 If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEPLOYER` in `.env`.
 
+Broadcasts on Monad default to `--gas-estimate-multiplier 200` because the RPC often underestimates gas for admin and sync transactions. Override this per network with `<PREFIX>_GAS_ESTIMATE_MULTIPLIER` in `.env` when needed.
+
 Adapter upgrades in the interactive menu now live under `upgrade -> adapters` and resolve the known proxy address from `deployments/*.sol`, just like router and fee vault upgrades. You do not need an `.env` entry for the proxy address unless you want to call the manual override entrypoint yourself.
 Example:
 

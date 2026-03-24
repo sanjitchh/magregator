@@ -30,6 +30,21 @@ load_env() {
   fi
 }
 
+resolve_gas_estimate_multiplier() {
+  local value=''
+  local per_network_var="${PREFIX}_GAS_ESTIMATE_MULTIPLIER"
+
+  value="${!per_network_var:-}"
+  if [[ -n "$value" ]]; then
+    printf '%s' "$value"
+    return
+  fi
+
+  if [[ "$RPC_ALIAS" == 'monad' ]]; then
+    printf '200'
+  fi
+}
+
 select_network() {
   echo "Choose network:"
   select net in monad sepolia; do
@@ -740,6 +755,12 @@ main() {
 
     if [[ -n "$DEPLOYER_PK" ]]; then
       CMD+=(--private-key "$DEPLOYER_PK" --broadcast)
+
+      GAS_ESTIMATE_MULTIPLIER="$(resolve_gas_estimate_multiplier)"
+      if [[ -n "$GAS_ESTIMATE_MULTIPLIER" ]]; then
+        CMD+=(--gas-estimate-multiplier "$GAS_ESTIMATE_MULTIPLIER")
+        echo "Using gas estimate multiplier: $GAS_ESTIMATE_MULTIPLIER"
+      fi
     fi
 
     "${CMD[@]}"

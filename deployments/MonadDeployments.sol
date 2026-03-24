@@ -9,14 +9,19 @@ contract MonadDeployments is INetworkDeployments {
 
     // Fill these addresses after deploying the router and adapters on Monad.
     address constant ROUTER = 0x09e5c9eE065978F6a9a2F07CF8aAf2B449D3318e;
-    address constant FEE_VAULT = address(0);
+    // Current FeeVault implementation after Monad deploy: 0x0468c436055eD301f227178e17d2a084Ba526E1b.
+    address constant FEE_VAULT = 0x2cb1247AF8313e36FA6ee071B1Ec815d5d4ce904;
     address constant UNISWAP_V2_ADAPTER = address(0);
-    address constant UNISWAP_V3_ADAPTER = 0x6405e08499364968321AaAD480da88DC4283e943;
-    address constant PANCAKE_V3_ADAPTER = 0x7caF364caA220D606cd68Ca9960DE4e05cb27158;
-    address constant KURU_ADAPTER = 0x8F88Da856160b6753063F90d7180B800f9E67ee0;
+    // Current UniswapV3 implementation after Monad redeploy: 0x4433CDF3275f6C557c4969bD325729ec3563Ed68.
+    address constant UNISWAP_V3_ADAPTER = 0xbCC54C8Ca1363C004A80944ff0aEf0d3356E0efC;
+    // Current PancakeV3 implementation after Monad redeploy: 0xF10a4b96A63C4DED70F235B8171fD55A9Cf3871E.
+    address constant PANCAKE_V3_ADAPTER = 0x60aFAE2FFF02cAB90Afa2a8fE025Dcb1FC7d0F69;
+    // Current Kuru implementation after Monad redeploy: 0x764535e505aF9fCEB2725CEB5f124797072E8AF0.
+    address constant KURU_ADAPTER = 0x5a1B8BF59027b5C24A00d45a5676E5deb94D9A0f;
     address constant KYBER_ELASTIC_ADAPTER = address(0);
     address constant UNISWAP_V4_ADAPTER = address(0);
-    address constant WNATIVE_ADAPTER = 0xEe50F0611F201A255e4852e44EBCcBd0cB86bF02;
+    // Current WNative implementation after Monad redeploy: 0x2dfE28eebf0C6B60c080ab52c0c573bBc94bdb6d.
+    address constant WNATIVE_ADAPTER = 0x4fbEEa204Ef8E8163e8da2Aff24451E83ecA6d6E;
 
     function getChainId() public pure override returns (uint256) {
         return CHAIN_ID;
