@@ -10,6 +10,14 @@ interface IFeeVault {
     event UpdatedRouter(address _oldRouter, address _newRouter);
     event UpdatedExecutor(address _oldExecutor, address _newExecutor);
     event UpdatedUsdc(address _oldUsdc, address _newUsdc);
+    event UsdcMigrationConfigured(
+        address _oldUsdc,
+        address _newUsdc,
+        uint256 _recoveryCapUsdc,
+        uint256 _recoveryAccruedUsdc,
+        uint256 _developmentCapUsdc,
+        uint256 _developmentAccruedUsdc
+    );
     event UpdatedRecoveryRecipient(address _oldRecoveryRecipient, address _newRecoveryRecipient);
     event UpdatedRecoveryCapUsdc(uint256 _oldRecoveryCapUsdc, uint256 _newRecoveryCapUsdc);
     event UpdatedDevelopmentRecipient(address _oldDevelopmentRecipient, address _newDevelopmentRecipient);
@@ -29,6 +37,13 @@ interface IFeeVault {
     function setRouter(address _router) external;
     function setExecutor(address _executor) external;
     function setUsdc(address _usdc) external;
+    function migrateUsdcAccounting(
+        address _usdc,
+        uint256 _recoveryCapUsdc,
+        uint256 _recoveryAccruedUsdc,
+        uint256 _developmentCapUsdc,
+        uint256 _developmentAccruedUsdc
+    ) external;
     function setRecoveryRecipient(address _recoveryRecipient) external;
     function setRecoveryCapUsdc(uint256 _recoveryCapUsdc) external;
     function setDevelopmentRecipient(address _developmentRecipient) external;

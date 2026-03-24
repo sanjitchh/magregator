@@ -468,7 +468,7 @@ select_admin_router_action() {
 
 select_admin_vault_action() {
   echo "Choose fee vault admin action:"
-  select c in status token-balance set-router set-executor set-usdc set-recovery-recipient set-recovery-cap-usdc set-development-recipient set-development-cap-usdc set-postcap-company-recipient set-protocol-recipient set-postcap-company-bps set-allowed-target set-token-approval allocate-and-distribute-usdc distribute-pending-usdc back; do
+  select c in status token-balance set-router set-executor set-usdc migrate-usdc-accounting set-recovery-recipient set-recovery-cap-usdc set-development-recipient set-development-cap-usdc set-postcap-company-recipient set-protocol-recipient set-postcap-company-bps set-allowed-target set-token-approval allocate-and-distribute-usdc distribute-pending-usdc back; do
     case "$c" in
       status)
         reset_action_config
@@ -510,6 +510,21 @@ select_admin_vault_action() {
         SIG='runSetUsdc(address)'
         MUTATES_STATE=1
         EXTRA_ARGS=("$(prompt_address 'New USDC address')")
+        return 0
+        ;;
+      migrate-usdc-accounting)
+        reset_action_config
+        ACTION_LABEL='migrate fee vault USDC accounting'
+        SCRIPT_TARGET='script/admin/ManageFeeVault.s.sol:ManageFeeVault'
+        SIG='runMigrateUsdcAccounting(address,uint256,uint256,uint256,uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_address 'New USDC address')"
+          "$(prompt_uint 'New recovery cap in USDC base units')"
+          "$(prompt_uint 'New recovery accrued in USDC base units')"
+          "$(prompt_uint 'New development cap in USDC base units')"
+          "$(prompt_uint 'New development accrued in USDC base units')"
+        )
         return 0
         ;;
       set-recovery-recipient)
