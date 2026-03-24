@@ -118,6 +118,8 @@ Fresh fee vault deployments also pick up optional treasury settings from `.env` 
 - `<PREFIX>_PROTOCOL_RECIPIENT`
 - `<PREFIX>_POST_CAP_COMPANY_BPS`
 
+For V3-style adapters, the interactive menu also includes `admin -> sync-tools -> enable-uniswapv3-fees` and `enable-pancakev3-fees` to seed the default fee tiers on an already-deployed adapter. Fresh V3 adapter deployments now fall back to built-in default fee tiers when the corresponding `.env` array is not set.
+
 `RECOVERY_CAP_USDC` and `DEVELOPMENT_CAP_USDC` use raw USDC base units. With 6-decimal USDC, `50,000 USDC` should be set as `50000000000`.
 
 That means new router and fee vault deployments can come up preconfigured without requiring separate post-deploy admin transactions.

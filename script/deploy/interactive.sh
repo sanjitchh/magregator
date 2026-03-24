@@ -626,7 +626,7 @@ select_admin_vault_action() {
 
 select_admin_sync_action() {
   echo "Choose sync/admin maintenance action:"
-  select c in update-adapters update-hop-tokens manage-uniswapv4-pools back; do
+  select c in update-adapters update-hop-tokens uniswapv3-fee-status enable-uniswapv3-fees pancakev3-fee-status enable-pancakev3-fees manage-uniswapv4-pools back; do
     case "$c" in
       update-adapters)
         reset_action_config
@@ -639,6 +639,36 @@ select_admin_sync_action() {
         reset_action_config
         ACTION_LABEL='sync router hop tokens'
         SCRIPT_TARGET='script/admin/UpdateHopTokens.s.sol:UpdateHopTokens'
+        MUTATES_STATE=1
+        return 0
+        ;;
+      uniswapv3-fee-status)
+        reset_action_config
+        ACTION_LABEL='show uniswapv3 adapter fee tiers'
+        SCRIPT_TARGET='script/admin/ManageV3FeeAmounts.s.sol:ManageV3FeeAmounts'
+        SIG='runStatusUniswapV3()'
+        return 0
+        ;;
+      enable-uniswapv3-fees)
+        reset_action_config
+        ACTION_LABEL='enable uniswapv3 adapter fee tiers'
+        SCRIPT_TARGET='script/admin/ManageV3FeeAmounts.s.sol:ManageV3FeeAmounts'
+        SIG='runEnableUniswapV3DefaultFees()'
+        MUTATES_STATE=1
+        return 0
+        ;;
+      pancakev3-fee-status)
+        reset_action_config
+        ACTION_LABEL='show pancakev3 adapter fee tiers'
+        SCRIPT_TARGET='script/admin/ManageV3FeeAmounts.s.sol:ManageV3FeeAmounts'
+        SIG='runStatusPancakeV3()'
+        return 0
+        ;;
+      enable-pancakev3-fees)
+        reset_action_config
+        ACTION_LABEL='enable pancakev3 adapter fee tiers'
+        SCRIPT_TARGET='script/admin/ManageV3FeeAmounts.s.sol:ManageV3FeeAmounts'
+        SIG='runEnablePancakeV3DefaultFees()'
         MUTATES_STATE=1
         return 0
         ;;

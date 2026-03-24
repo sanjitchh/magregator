@@ -95,6 +95,10 @@ contract DeployUpgradeable is Script {
         vm.startBroadcast();
 
         address implementation = address(new UniswapV3Adapter());
+        uint24[] memory defaultFees = _readUint24Array(_key(prefix, "UNIV3_DEFAULT_FEE"));
+        if (defaultFees.length == 0) {
+            defaultFees = _defaultUniswapV3Fees();
+        }
         bytes memory initData = abi.encodeCall(
             UniswapV3Adapter.initialize,
             (
@@ -103,7 +107,7 @@ contract DeployUpgradeable is Script {
                 vm.envOr(_key(prefix, "UNIV3_QUOTER_GAS_LIMIT"), uint256(500_000)),
                 vm.envAddress(_key(prefix, "UNIV3_QUOTER")),
                 vm.envAddress(_key(prefix, "UNIV3_FACTORY")),
-                _readUint24Array(_key(prefix, "UNIV3_DEFAULT_FEE")),
+                defaultFees,
                 vm.envAddress(_key(prefix, "INITIAL_MAINTAINER"))
             )
         );
@@ -119,6 +123,10 @@ contract DeployUpgradeable is Script {
         vm.startBroadcast();
 
         address implementation = address(new PancakeV3Adapter());
+        uint24[] memory defaultFees = _readUint24Array(_key(prefix, "PANCAKEV3_DEFAULT_FEE"));
+        if (defaultFees.length == 0) {
+            defaultFees = _defaultPancakeV3Fees();
+        }
         bytes memory initData = abi.encodeCall(
             PancakeV3Adapter.initialize,
             (
@@ -127,7 +135,7 @@ contract DeployUpgradeable is Script {
                 vm.envOr(_key(prefix, "PANCAKEV3_QUOTER_GAS_LIMIT"), uint256(1_500_000)),
                 vm.envAddress(_key(prefix, "PANCAKEV3_QUOTER")),
                 vm.envAddress(_key(prefix, "PANCAKEV3_FACTORY")),
-                _readUint24Array(_key(prefix, "PANCAKEV3_DEFAULT_FEE")),
+                defaultFees,
                 vm.envAddress(_key(prefix, "INITIAL_MAINTAINER"))
             )
         );
@@ -329,5 +337,20 @@ contract DeployUpgradeable is Script {
         for (uint256 i = 0; i < count; i++) {
             values[i] = uint24(vm.envUint(string.concat(baseKey, "_", vm.toString(i))));
         }
+    }
+
+    function _defaultUniswapV3Fees() internal pure returns (uint24[] memory values) {
+        values = new uint24[](4);
+        values[0] = 100;
+        values[1] = 500;
+        values[2] = 3000;
+        values[3] = 10_000;
+    }
+
+    function _defaultPancakeV3Fees() internal pure returns (uint24[] memory values) {
+        values = new uint24[](3);
+        values[0] = 100;
+        values[1] = 500;
+        values[2] = 10_000;
     }
 }
