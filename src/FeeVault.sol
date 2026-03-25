@@ -240,6 +240,12 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
             return;
         }
 
+        (bool success, bytes memory returndata) = _tryTransferUsdc(_recipient, _amount);
+        if (!success) {
+            emit UsdcDistributionFailed(_bucket, _recipient, _amount, returndata);
+            return;
+        }
+
         if (_bucket == 0) {
             pendingRecoveryUsdc = 0;
         } else if (_bucket == 1) {
@@ -250,8 +256,6 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
             pendingProtocolUsdc = 0;
         }
 
-        IERC20(USDC).safeTransfer(_recipient, _amount);
-
         if (_bucket == 0) {
             emit RecoveryUsdcDistributed(_recipient, _amount);
         } else if (_bucket == 1) {
@@ -261,6 +265,26 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
         } else {
             emit ProtocolUsdcDistributed(_recipient, _amount);
         }
+    }
+
+    function _tryTransferUsdc(address _recipient, uint256 _amount) internal returns (bool, bytes memory) {
+        // Best-effort distribution avoids coupling all payout buckets to one recipient.
+        (bool success, bytes memory returndata) =
+            address(IERC20(USDC)).call(abi.encodeWithSelector(IERC20.transfer.selector, _recipient, _amount));
+
+        if (!success) {
+            return (false, returndata);
+        }
+
+        if (returndata.length == 0) {
+            return (true, returndata);
+        }
+
+        if (returndata.length >= 32 && abi.decode(returndata, (bool))) {
+            return (true, returndata);
+        }
+
+        return (false, returndata);
     }
 
     function _forceApprove(address _token, address _spender, uint256 _amount) internal {
