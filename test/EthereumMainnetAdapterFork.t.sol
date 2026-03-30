@@ -15,7 +15,6 @@ import {PancakeV3Adapter} from "../src/adapters/PancakeV3Adapter.sol";
 import {KyberElasticAdapter} from "../src/adapters/KyberElasticAdapter.sol";
 import {SushiV3Adapter} from "../src/adapters/SushiV3Adapter.sol";
 import {UniswapV4Adapter} from "../src/adapters/UniswapV4Adapter.sol";
-import {PancakeV3StaticQuoter} from "../src/utils/PancakeV3StaticQuoter.sol";
 import {UniswapV3StaticQuoter} from "../src/utils/UniswapV3StaticQuoter.sol";
 import {UniswapV4StaticQuoter} from "../src/utils/UniswapV4StaticQuoter.sol";
 import {IUniswapV4StaticQuoter} from "../src/interface/IUniswapV4StaticQuoter.sol";
@@ -30,7 +29,6 @@ contract EthereumMainnetAdapterForkTest is AdapterTestBase {
 
     address internal constant UNISWAP_V2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
     address internal constant PANCAKE_V3_FACTORY = 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865;
-    address internal constant PANCAKE_V3_QUOTER_V2 = 0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997;
     address internal constant SUSHI_V3_FACTORY = 0xbACEB8eC6b9355Dfc0269C18bac9d6E2Bdc29C4F;
     address internal constant KYBER_QUOTER_V2 = 0x4d47fd5a29904Dae0Ef51b1c450C9750F15D7856;
     address internal constant KYBER_FACTORY = 0xC7a590291e07B9fe9E64b86c58fD8fC764308C4A;
@@ -49,21 +47,12 @@ contract EthereumMainnetAdapterForkTest is AdapterTestBase {
     }
 
     function testPancakeV3MainnetForkStaticQuoterQuotesKnownPool() external {
-        PancakeV3StaticQuoter quoter = new PancakeV3StaticQuoter(PANCAKE_V3_QUOTER_V2);
+        UniswapV3StaticQuoter quoter = new UniswapV3StaticQuoter();
         address pool = _pancakePool(WETH, USDC, 500);
         (int256 amount0, int256 amount1) = quoter.quote(pool, false, int256(AMOUNT_IN), 0);
 
         assertEq(amount1, int256(AMOUNT_IN), "Pancake static quoter should preserve input amount");
         assertLt(amount0, 0, "Pancake static quoter should return token0 out");
-    }
-
-    function testPancakeV3MainnetForkLegacyUniswapStaticQuoterQuotesKnownPool() external {
-        UniswapV3StaticQuoter quoter = new UniswapV3StaticQuoter();
-        address pool = _pancakePool(WETH, USDC, 500);
-        (int256 amount0, int256 amount1) = quoter.quote(pool, false, int256(AMOUNT_IN), 0);
-
-        assertEq(amount1, int256(AMOUNT_IN), "Legacy v3 static quoter should preserve input amount");
-        assertLt(amount0, 0, "Legacy v3 static quoter should return token0 out");
     }
 
     function testPancakeV3MainnetForkSwapMatchesQuery() external {
@@ -145,7 +134,7 @@ contract EthereumMainnetAdapterForkTest is AdapterTestBase {
 
     function _deployPancakeV3Adapter() internal returns (PancakeV3Adapter) {
         PancakeV3Adapter implementation = new PancakeV3Adapter();
-        PancakeV3StaticQuoter quoter = new PancakeV3StaticQuoter(PANCAKE_V3_QUOTER_V2);
+        UniswapV3StaticQuoter quoter = new UniswapV3StaticQuoter();
 
         uint24[] memory fees = new uint24[](4);
         fees[0] = 100;

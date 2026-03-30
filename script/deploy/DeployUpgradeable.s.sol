@@ -15,7 +15,6 @@ import "../../src/adapters/KyberElasticAdapter.sol";
 import "../../src/adapters/UniswapV4Adapter.sol";
 import "../../src/adapters/WNativeAdapter.sol";
 import "../../src/adapters/KuruAdapter.sol";
-import "../../src/utils/PancakeV3StaticQuoter.sol";
 import "../../src/utils/UniswapV3StaticQuoter.sol";
 import "../../src/utils/UniswapV4StaticQuoter.sol";
 
@@ -273,14 +272,6 @@ contract DeployUpgradeable is Script {
         vm.startBroadcast();
         address quoter = address(new UniswapV3StaticQuoter());
         console.log("UniswapV3StaticQuoter:", quoter);
-        vm.stopBroadcast();
-    }
-
-    function runPancakeV3StaticQuoter(string calldata prefix) external {
-        vm.startBroadcast();
-        address quoter =
-            address(new PancakeV3StaticQuoter(vm.envAddress(_key(prefix, "PANCAKEV3_OFFICIAL_QUOTER_V2"))));
-        console.log("PancakeV3StaticQuoter:", quoter);
         vm.stopBroadcast();
     }
 

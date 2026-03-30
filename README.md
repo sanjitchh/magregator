@@ -49,7 +49,6 @@ Available entrypoints:
 - `runUniswapV3(string)`
 - `runSushiV3(string)`
 - `runPancakeV3(string)`
-- `runPancakeV3StaticQuoter(string)`
 - `runKyberElastic(string)`
 - `runUniswapV4(string)`
 - `runUniswapV4StaticQuoter(string)`
@@ -93,8 +92,6 @@ If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEP
 Uniswap v4 adapter deployments expect `<PREFIX>_UNIV4_STATIC_QUOTER` to point at a deployed `UniswapV4StaticQuoter`, which you can deploy from the interactive menu or via `runUniswapV4StaticQuoter(string)`.
 
 Sushi v3 adapter deployments use the same pool-level static quoter flow as Uniswap v3 in this repo, so `<PREFIX>_SUSHIV3_QUOTER` should point at a deployed `UniswapV3StaticQuoter` rather than Sushi's official `QuoterV2`.
-
-Pancake v3 adapter deployments should point `<PREFIX>_PANCAKEV3_QUOTER` at a deployed `PancakeV3StaticQuoter`, which wraps Pancake's official `QuoterV2` behind the `quote(address,bool,int256,uint160)` interface expected by this repo.
 
 Broadcasts on Monad default to `--gas-estimate-multiplier 200` because the RPC often underestimates gas for admin and sync transactions. Override this per network with `<PREFIX>_GAS_ESTIMATE_MULTIPLIER` in `.env` when needed.
 

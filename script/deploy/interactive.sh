@@ -153,7 +153,7 @@ select_group() {
 select_deploy_action() {
   while true; do
     echo "Choose deploy action:"
-    select c in router feevault adapters v3staticquoter pancakev3staticquoter v4staticquoter back; do
+    select c in router feevault adapters v3staticquoter v4staticquoter back; do
       case "$c" in
         router)
           reset_action_config
@@ -184,15 +184,6 @@ select_deploy_action() {
           ACTION_LABEL='deploy v3 static quoter'
           SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
           SIG='runUniswapV3StaticQuoter()'
-          MUTATES_STATE=1
-          return 0
-          ;;
-        pancakev3staticquoter)
-          reset_action_config
-          ACTION_LABEL='deploy pancakev3 static quoter'
-          SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
-          SIG='runPancakeV3StaticQuoter(string)'
-          NEEDS_PREFIX=1
           MUTATES_STATE=1
           return 0
           ;;

@@ -6,7 +6,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 interface IStaticQuoteV3Pool {
     function liquidity() external view returns (uint128);
     function fee() external view returns (uint24);
-    function slot0() external view returns (uint160, int24, uint16, uint16, uint16, uint8, bool);
+    function slot0() external view returns (uint160, int24, uint16, uint16, uint16, uint32, bool);
 }
 
 contract UniswapV3StaticQuoter {
