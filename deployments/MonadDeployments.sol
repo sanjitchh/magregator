@@ -14,6 +14,7 @@ contract MonadDeployments is INetworkDeployments {
     address constant UNISWAP_V2_ADAPTER = address(0);
     // Current UniswapV3 implementation after Monad redeploy: 0x4433CDF3275f6C557c4969bD325729ec3563Ed68.
     address constant UNISWAP_V3_ADAPTER = 0xbCC54C8Ca1363C004A80944ff0aEf0d3356E0efC;
+    address constant SUSHI_V3_ADAPTER = address(0);
     // Current PancakeV3 implementation after Monad redeploy: 0xF10a4b96A63C4DED70F235B8171fD55A9Cf3871E.
     address constant PANCAKE_V3_ADAPTER = 0x60aFAE2FFF02cAB90Afa2a8fE025Dcb1FC7d0F69;
     // Current Kuru implementation after Monad redeploy: 0x764535e505aF9fCEB2725CEB5f124797072E8AF0.
@@ -47,6 +48,10 @@ contract MonadDeployments is INetworkDeployments {
         return UNISWAP_V3_ADAPTER;
     }
 
+    function getSushiV3Adapter() public pure override returns (address) {
+        return SUSHI_V3_ADAPTER;
+    }
+
     function getPancakeV3Adapter() public pure override returns (address) {
         return PANCAKE_V3_ADAPTER;
     }
@@ -66,6 +71,7 @@ contract MonadDeployments is INetworkDeployments {
     function getWhitelistedAdapters() public pure override returns (address[] memory) {
         uint256 count;
         if (UNISWAP_V3_ADAPTER != address(0)) count++;
+        if (SUSHI_V3_ADAPTER != address(0)) count++;
         if (PANCAKE_V3_ADAPTER != address(0)) count++;
         if (KURU_ADAPTER != address(0)) count++;
         if (KYBER_ELASTIC_ADAPTER != address(0)) count++;
@@ -76,6 +82,10 @@ contract MonadDeployments is INetworkDeployments {
 
         if (UNISWAP_V3_ADAPTER != address(0)) {
             adapters[i] = UNISWAP_V3_ADAPTER;
+            i++;
+        }
+        if (SUSHI_V3_ADAPTER != address(0)) {
+            adapters[i] = SUSHI_V3_ADAPTER;
             i++;
         }
         if (PANCAKE_V3_ADAPTER != address(0)) {

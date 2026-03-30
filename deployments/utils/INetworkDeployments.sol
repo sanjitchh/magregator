@@ -8,6 +8,7 @@ interface INetworkDeployments {
     function getFeeVault() external view returns (address);
     function getUniswapV2Adapter() external view returns (address);
     function getUniswapV3Adapter() external view returns (address);
+    function getSushiV3Adapter() external view returns (address);
     function getPancakeV3Adapter() external view returns (address);
     function getKyberElasticAdapter() external view returns (address);
     function getWNativeAdapter() external view returns (address);

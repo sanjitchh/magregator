@@ -153,7 +153,7 @@ select_group() {
 select_deploy_action() {
   while true; do
     echo "Choose deploy action:"
-    select c in router feevault adapters v3staticquoter back; do
+    select c in router feevault adapters v3staticquoter pancakev3staticquoter v4staticquoter back; do
       case "$c" in
         router)
           reset_action_config
@@ -187,6 +187,24 @@ select_deploy_action() {
           MUTATES_STATE=1
           return 0
           ;;
+        pancakev3staticquoter)
+          reset_action_config
+          ACTION_LABEL='deploy pancakev3 static quoter'
+          SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+          SIG='runPancakeV3StaticQuoter(string)'
+          NEEDS_PREFIX=1
+          MUTATES_STATE=1
+          return 0
+          ;;
+        v4staticquoter)
+          reset_action_config
+          ACTION_LABEL='deploy v4 static quoter'
+          SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+          SIG='runUniswapV4StaticQuoter(string)'
+          NEEDS_PREFIX=1
+          MUTATES_STATE=1
+          return 0
+          ;;
         back)
           select_group
           return 0
@@ -199,7 +217,7 @@ select_deploy_action() {
 
 select_deploy_adapter_action() {
   echo "Choose adapter deploy action:"
-  select c in uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru back; do
+  select c in uniswapv2 uniswapv3 sushiv3 pancakev3 kyber uniswapv4 wnative kuru back; do
     case "$c" in
       uniswapv2)
         reset_action_config
@@ -215,6 +233,15 @@ select_deploy_adapter_action() {
         ACTION_LABEL='deploy uniswapv3 adapter'
         SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
         SIG='runUniswapV3(string)'
+        NEEDS_PREFIX=1
+        MUTATES_STATE=1
+        return 0
+        ;;
+      sushiv3)
+        reset_action_config
+        ACTION_LABEL='deploy sushiv3 adapter'
+        SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+        SIG='runSushiV3(string)'
         NEEDS_PREFIX=1
         MUTATES_STATE=1
         return 0
@@ -309,7 +336,7 @@ select_upgrade_action() {
 
 select_upgrade_adapter_action() {
   echo "Choose adapter upgrade action:"
-  select c in uniswapv2 uniswapv3 pancakev3 kyber uniswapv4 wnative kuru back; do
+  select c in uniswapv2 uniswapv3 sushiv3 pancakev3 kyber uniswapv4 wnative kuru back; do
     case "$c" in
       uniswapv2)
         reset_action_config
@@ -324,6 +351,14 @@ select_upgrade_adapter_action() {
         ACTION_LABEL='upgrade uniswapv3 adapter'
         SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
         SIG='runUniswapV3()'
+        MUTATES_STATE=1
+        return 0
+        ;;
+      sushiv3)
+        reset_action_config
+        ACTION_LABEL='upgrade sushiv3 adapter'
+        SCRIPT_TARGET='script/admin/UpgradeAdapters.s.sol:UpgradeAdapters'
+        SIG='runSushiV3()'
         MUTATES_STATE=1
         return 0
         ;;
@@ -626,7 +661,7 @@ select_admin_vault_action() {
 
 select_admin_sync_action() {
   echo "Choose sync/admin maintenance action:"
-  select c in update-adapters update-hop-tokens uniswapv3-fee-status enable-uniswapv3-fees pancakev3-fee-status enable-pancakev3-fees manage-uniswapv4-pools back; do
+  select c in update-adapters update-hop-tokens uniswapv3-fee-status enable-uniswapv3-fees sushiv3-fee-status enable-sushiv3-fees pancakev3-fee-status enable-pancakev3-fees manage-uniswapv4-pools back; do
     case "$c" in
       update-adapters)
         reset_action_config
@@ -654,6 +689,21 @@ select_admin_sync_action() {
         ACTION_LABEL='enable uniswapv3 adapter fee tiers'
         SCRIPT_TARGET='script/admin/ManageV3FeeAmounts.s.sol:ManageV3FeeAmounts'
         SIG='runEnableUniswapV3DefaultFees()'
+        MUTATES_STATE=1
+        return 0
+        ;;
+      sushiv3-fee-status)
+        reset_action_config
+        ACTION_LABEL='show sushiv3 adapter fee tiers'
+        SCRIPT_TARGET='script/admin/ManageV3FeeAmounts.s.sol:ManageV3FeeAmounts'
+        SIG='runStatusSushiV3()'
+        return 0
+        ;;
+      enable-sushiv3-fees)
+        reset_action_config
+        ACTION_LABEL='enable sushiv3 adapter fee tiers'
+        SCRIPT_TARGET='script/admin/ManageV3FeeAmounts.s.sol:ManageV3FeeAmounts'
+        SIG='runEnableSushiV3DefaultFees()'
         MUTATES_STATE=1
         return 0
         ;;

@@ -9,23 +9,34 @@ import {UniswapV3AdapterBase} from "../../src/adapters/UniswapV3AdapterBase.sol"
 
 contract ManageV3FeeAmounts is Script {
     function runStatusUniswapV3() external {
-        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(true);
+        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(1);
         _logFeeAmounts(deployments.getNetworkName(), "UniswapV3Adapter", address(adapter), adapter.getFeeAmounts());
     }
 
     function runEnableUniswapV3DefaultFees() external {
-        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(true);
+        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(1);
         uint24[] memory fees = _defaultUniswapV3Fees();
         _enableFees(deployments.getNetworkName(), "UniswapV3Adapter", address(adapter), fees);
     }
 
+    function runStatusSushiV3() external {
+        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(2);
+        _logFeeAmounts(deployments.getNetworkName(), "SushiV3Adapter", address(adapter), adapter.getFeeAmounts());
+    }
+
+    function runEnableSushiV3DefaultFees() external {
+        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(2);
+        uint24[] memory fees = _defaultUniswapV3Fees();
+        _enableFees(deployments.getNetworkName(), "SushiV3Adapter", address(adapter), fees);
+    }
+
     function runStatusPancakeV3() external {
-        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(false);
+        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(3);
         _logFeeAmounts(deployments.getNetworkName(), "PancakeV3Adapter", address(adapter), adapter.getFeeAmounts());
     }
 
     function runEnablePancakeV3DefaultFees() external {
-        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(false);
+        (INetworkDeployments deployments, UniswapV3AdapterBase adapter) = _adapter(3);
         uint24[] memory fees = _defaultPancakeV3Fees();
         _enableFees(deployments.getNetworkName(), "PancakeV3Adapter", address(adapter), fees);
     }
@@ -68,11 +79,20 @@ contract ManageV3FeeAmounts is Script {
         }
     }
 
-    function _adapter(bool isUniswapV3) internal returns (INetworkDeployments deployments, UniswapV3AdapterBase adapter) {
+    function _adapter(uint8 adapterType) internal returns (INetworkDeployments deployments, UniswapV3AdapterBase adapter) {
         DeploymentFactory factory = new DeploymentFactory();
         deployments = factory.getDeployments();
 
-        address adapterProxy = isUniswapV3 ? deployments.getUniswapV3Adapter() : deployments.getPancakeV3Adapter();
+        address adapterProxy;
+        if (adapterType == 1) {
+            adapterProxy = deployments.getUniswapV3Adapter();
+        } else if (adapterType == 2) {
+            adapterProxy = deployments.getSushiV3Adapter();
+        } else if (adapterType == 3) {
+            adapterProxy = deployments.getPancakeV3Adapter();
+        } else {
+            revert("ManageV3FeeAmounts: unsupported adapter type");
+        }
         require(adapterProxy != address(0), "ManageV3FeeAmounts: adapter not configured");
         adapter = UniswapV3AdapterBase(payable(adapterProxy));
     }

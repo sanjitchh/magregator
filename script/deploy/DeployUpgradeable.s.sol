@@ -9,12 +9,15 @@ import "../../src/MoksaRouter.sol";
 import "../../src/FeeVault.sol";
 import "../../src/adapters/UniswapV2Adapter.sol";
 import "../../src/adapters/UniswapV3Adapter.sol";
+import "../../src/adapters/SushiV3Adapter.sol";
 import "../../src/adapters/PancakeV3Adapter.sol";
 import "../../src/adapters/KyberElasticAdapter.sol";
 import "../../src/adapters/UniswapV4Adapter.sol";
 import "../../src/adapters/WNativeAdapter.sol";
 import "../../src/adapters/KuruAdapter.sol";
+import "../../src/utils/PancakeV3StaticQuoter.sol";
 import "../../src/utils/UniswapV3StaticQuoter.sol";
+import "../../src/utils/UniswapV4StaticQuoter.sol";
 
 contract DeployUpgradeable is Script {
     function runRouter(string calldata prefix) external {
@@ -115,6 +118,34 @@ contract DeployUpgradeable is Script {
 
         console.log("UniswapV3Adapter implementation:", implementation);
         console.log("UniswapV3Adapter proxy:", proxy);
+
+        vm.stopBroadcast();
+    }
+
+    function runSushiV3(string calldata prefix) external {
+        vm.startBroadcast();
+
+        address implementation = address(new SushiV3Adapter());
+        uint24[] memory defaultFees = _readUint24Array(_key(prefix, "SUSHIV3_DEFAULT_FEE"));
+        if (defaultFees.length == 0) {
+            defaultFees = _defaultUniswapV3Fees();
+        }
+        bytes memory initData = abi.encodeCall(
+            SushiV3Adapter.initialize,
+            (
+                vm.envString(_key(prefix, "SUSHIV3_NAME")),
+                vm.envOr(_key(prefix, "SUSHIV3_GAS_ESTIMATE"), uint256(185_000)),
+                vm.envOr(_key(prefix, "SUSHIV3_QUOTER_GAS_LIMIT"), uint256(500_000)),
+                vm.envAddress(_key(prefix, "SUSHIV3_QUOTER")),
+                vm.envAddress(_key(prefix, "SUSHIV3_FACTORY")),
+                defaultFees,
+                vm.envAddress(_key(prefix, "INITIAL_MAINTAINER"))
+            )
+        );
+        address proxy = _deployProxy(implementation, initData);
+
+        console.log("SushiV3Adapter implementation:", implementation);
+        console.log("SushiV3Adapter proxy:", proxy);
 
         vm.stopBroadcast();
     }
@@ -242,6 +273,21 @@ contract DeployUpgradeable is Script {
         vm.startBroadcast();
         address quoter = address(new UniswapV3StaticQuoter());
         console.log("UniswapV3StaticQuoter:", quoter);
+        vm.stopBroadcast();
+    }
+
+    function runPancakeV3StaticQuoter(string calldata prefix) external {
+        vm.startBroadcast();
+        address quoter =
+            address(new PancakeV3StaticQuoter(vm.envAddress(_key(prefix, "PANCAKEV3_OFFICIAL_QUOTER_V2"))));
+        console.log("PancakeV3StaticQuoter:", quoter);
+        vm.stopBroadcast();
+    }
+
+    function runUniswapV4StaticQuoter(string calldata prefix) external {
+        vm.startBroadcast();
+        address quoter = address(new UniswapV4StaticQuoter(vm.envAddress(_key(prefix, "UNIV4_POOL_MANAGER"))));
+        console.log("UniswapV4StaticQuoter:", quoter);
         vm.stopBroadcast();
     }
 

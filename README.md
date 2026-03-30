@@ -47,9 +47,12 @@ Available entrypoints:
 - `runRouter(string)`
 - `runUniswapV2(string)`
 - `runUniswapV3(string)`
+- `runSushiV3(string)`
 - `runPancakeV3(string)`
+- `runPancakeV3StaticQuoter(string)`
 - `runKyberElastic(string)`
 - `runUniswapV4(string)`
+- `runUniswapV4StaticQuoter(string)`
 - `runWNative(string)`
 - `runKuru(string)`
 
@@ -73,7 +76,7 @@ Use the interactive wrapper for deployments, upgrades, admin changes, and read-o
 
 The menu is grouped to keep actions manageable:
 
-- `deploy` - deploy router, fee vault, the V3 static quoter, and adapters through a dedicated `adapters` submenu
+- `deploy` - deploy router, fee vault, the V3/V4 static quoters, and adapters through a dedicated `adapters` submenu
 - `upgrade` - upgrade existing router, fee vault, and adapter proxy contracts through a dedicated `adapters` submenu
 - `admin` - apply on-chain config changes
 - `inspect` - run read-only checks
@@ -86,6 +89,12 @@ Typical flow:
 4. Confirm broadcast if the action mutates state
 
 If you confirm broadcast, the script reads the private key from `<PREFIX>_PK_DEPLOYER` in `.env`.
+
+Uniswap v4 adapter deployments expect `<PREFIX>_UNIV4_STATIC_QUOTER` to point at a deployed `UniswapV4StaticQuoter`, which you can deploy from the interactive menu or via `runUniswapV4StaticQuoter(string)`.
+
+Sushi v3 adapter deployments use the same pool-level static quoter flow as Uniswap v3 in this repo, so `<PREFIX>_SUSHIV3_QUOTER` should point at a deployed `UniswapV3StaticQuoter` rather than Sushi's official `QuoterV2`.
+
+Pancake v3 adapter deployments should point `<PREFIX>_PANCAKEV3_QUOTER` at a deployed `PancakeV3StaticQuoter`, which wraps Pancake's official `QuoterV2` behind the `quote(address,bool,int256,uint160)` interface expected by this repo.
 
 Broadcasts on Monad default to `--gas-estimate-multiplier 200` because the RPC often underestimates gas for admin and sync transactions. Override this per network with `<PREFIX>_GAS_ESTIMATE_MULTIPLIER` in `.env` when needed.
 
@@ -118,7 +127,7 @@ Fresh fee vault deployments also pick up optional treasury settings from `.env` 
 - `<PREFIX>_PROTOCOL_RECIPIENT`
 - `<PREFIX>_POST_CAP_COMPANY_BPS`
 
-For V3-style adapters, the interactive menu also includes `admin -> sync-tools -> enable-uniswapv3-fees` and `enable-pancakev3-fees` to seed the default fee tiers on an already-deployed adapter. Fresh V3 adapter deployments now fall back to built-in default fee tiers when the corresponding `.env` array is not set.
+For V3-style adapters, the interactive menu also includes `admin -> sync-tools -> enable-uniswapv3-fees`, `enable-sushiv3-fees`, and `enable-pancakev3-fees` to seed the default fee tiers on an already-deployed adapter. Fresh V3 adapter deployments now fall back to built-in default fee tiers when the corresponding `.env` array is not set.
 
 `RECOVERY_CAP_USDC` and `DEVELOPMENT_CAP_USDC` use raw USDC base units. With 6-decimal USDC, `50,000 USDC` should be set as `50000000000`.
 

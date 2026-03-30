@@ -13,6 +13,7 @@ contract SepoliaDeployments is INetworkDeployments {
     address constant UNISWAP_V2_ADAPTER = address(0);
     // Current UniswapV3 implementation after Sepolia upgrade: 0xc4446028922a1b612a009DFA258eD309438dfcc5.
     address constant UNISWAP_V3_ADAPTER = 0x7caF364caA220D606cd68Ca9960DE4e05cb27158;
+    address constant SUSHI_V3_ADAPTER = 0x6286C48d42DC5D130D39f6B1e12bfC4cd2d3c77e;
     address constant PANCAKE_V3_ADAPTER = 0xBbb32C5436889d34F92bCEeB4805D60af3952B5d;
     address constant KURU_ADAPTER = address(0);
     address constant KYBER_ELASTIC_ADAPTER = address(0);
@@ -43,6 +44,10 @@ contract SepoliaDeployments is INetworkDeployments {
         return UNISWAP_V3_ADAPTER;
     }
 
+    function getSushiV3Adapter() public pure override returns (address) {
+        return SUSHI_V3_ADAPTER;
+    }
+
     function getPancakeV3Adapter() public pure override returns (address) {
         return PANCAKE_V3_ADAPTER;
     }
@@ -62,6 +67,7 @@ contract SepoliaDeployments is INetworkDeployments {
     function getWhitelistedAdapters() public pure override returns (address[] memory) {
         uint256 count;
         if (UNISWAP_V3_ADAPTER != address(0)) count++;
+        if (SUSHI_V3_ADAPTER != address(0)) count++;
         if (PANCAKE_V3_ADAPTER != address(0)) count++;
         if (KURU_ADAPTER != address(0)) count++;
         if (KYBER_ELASTIC_ADAPTER != address(0)) count++;
@@ -72,6 +78,7 @@ contract SepoliaDeployments is INetworkDeployments {
         uint256 i;
 
         if (UNISWAP_V3_ADAPTER != address(0)) adapters[i++] = UNISWAP_V3_ADAPTER;
+        if (SUSHI_V3_ADAPTER != address(0)) adapters[i++] = SUSHI_V3_ADAPTER;
         if (PANCAKE_V3_ADAPTER != address(0)) adapters[i++] = PANCAKE_V3_ADAPTER;
         if (KURU_ADAPTER != address(0)) adapters[i++] = KURU_ADAPTER;
         if (KYBER_ELASTIC_ADAPTER != address(0)) adapters[i++] = KYBER_ELASTIC_ADAPTER;

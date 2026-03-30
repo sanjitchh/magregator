@@ -7,6 +7,7 @@ import {DeploymentFactory} from "../../deployments/utils/DeploymentFactory.sol";
 import {INetworkDeployments} from "../../deployments/utils/INetworkDeployments.sol";
 import {UniswapV2Adapter} from "../../src/adapters/UniswapV2Adapter.sol";
 import {UniswapV3Adapter} from "../../src/adapters/UniswapV3Adapter.sol";
+import {SushiV3Adapter} from "../../src/adapters/SushiV3Adapter.sol";
 import {PancakeV3Adapter} from "../../src/adapters/PancakeV3Adapter.sol";
 import {KyberElasticAdapter} from "../../src/adapters/KyberElasticAdapter.sol";
 import {UniswapV4Adapter} from "../../src/adapters/UniswapV4Adapter.sol";
@@ -16,11 +17,12 @@ import {KuruAdapter} from "../../src/adapters/KuruAdapter.sol";
 contract UpgradeAdapters is Script {
     uint8 internal constant ADAPTER_UNISWAP_V2 = 1;
     uint8 internal constant ADAPTER_UNISWAP_V3 = 2;
-    uint8 internal constant ADAPTER_PANCAKE_V3 = 3;
-    uint8 internal constant ADAPTER_KYBER = 4;
-    uint8 internal constant ADAPTER_UNISWAP_V4 = 5;
-    uint8 internal constant ADAPTER_WNATIVE = 6;
-    uint8 internal constant ADAPTER_KURU = 7;
+    uint8 internal constant ADAPTER_SUSHI_V3 = 3;
+    uint8 internal constant ADAPTER_PANCAKE_V3 = 4;
+    uint8 internal constant ADAPTER_KYBER = 5;
+    uint8 internal constant ADAPTER_UNISWAP_V4 = 6;
+    uint8 internal constant ADAPTER_WNATIVE = 7;
+    uint8 internal constant ADAPTER_KURU = 8;
 
     function runUniswapV2() external {
         _upgradeAdapter(_deployments().getUniswapV2Adapter(), "UniswapV2Adapter", ADAPTER_UNISWAP_V2);
@@ -36,6 +38,14 @@ contract UpgradeAdapters is Script {
 
     function runUniswapV3(address adapterProxy) external {
         _upgradeAdapter(adapterProxy, "UniswapV3Adapter", ADAPTER_UNISWAP_V3);
+    }
+
+    function runSushiV3() external {
+        _upgradeAdapter(_deployments().getSushiV3Adapter(), "SushiV3Adapter", ADAPTER_SUSHI_V3);
+    }
+
+    function runSushiV3(address adapterProxy) external {
+        _upgradeAdapter(adapterProxy, "SushiV3Adapter", ADAPTER_SUSHI_V3);
     }
 
     function runPancakeV3() external {
@@ -110,6 +120,8 @@ contract UpgradeAdapters is Script {
             implementation = address(new UniswapV2Adapter());
         } else if (adapterType == ADAPTER_UNISWAP_V3) {
             implementation = address(new UniswapV3Adapter());
+        } else if (adapterType == ADAPTER_SUSHI_V3) {
+            implementation = address(new SushiV3Adapter());
         } else if (adapterType == ADAPTER_PANCAKE_V3) {
             implementation = address(new PancakeV3Adapter());
         } else if (adapterType == ADAPTER_KYBER) {
