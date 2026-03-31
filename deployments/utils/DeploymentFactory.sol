@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./INetworkDeployments.sol";
+import "../EthereumDeployments.sol";
 import "../MonadDeployments.sol";
 import "../SepoliaDeployments.sol";
 
@@ -13,6 +14,8 @@ contract DeploymentFactory {
 
         if (chainId == 143 || chainId == 10143) {
             return INetworkDeployments(address(new MonadDeployments()));
+        } else if (chainId == 1) {
+            return INetworkDeployments(address(new EthereumDeployments()));
         } else if (chainId == 11155111) {
             return INetworkDeployments(address(new SepoliaDeployments()));
         } else {
@@ -23,6 +26,8 @@ contract DeploymentFactory {
     function getDeploymentsByChainId(uint256 chainId) public returns (INetworkDeployments) {
         if (chainId == 143 || chainId == 10143) {
             return INetworkDeployments(address(new MonadDeployments()));
+        } else if (chainId == 1) {
+            return INetworkDeployments(address(new EthereumDeployments()));
         } else if (chainId == 11155111) {
             return INetworkDeployments(address(new SepoliaDeployments()));
         } else {
@@ -31,13 +36,16 @@ contract DeploymentFactory {
     }
 
     function getSupportedNetworks() public pure returns (uint256[] memory chainIds, string[] memory names) {
-        chainIds = new uint256[](2);
-        names = new string[](2);
+        chainIds = new uint256[](3);
+        names = new string[](3);
 
         chainIds[0] = 143;
         names[0] = "Monad";
 
-        chainIds[1] = 11155111;
-        names[1] = "Ethereum Sepolia";
+        chainIds[1] = 1;
+        names[1] = "Ethereum Mainnet";
+
+        chainIds[2] = 11155111;
+        names[2] = "Ethereum Sepolia";
     }
 }

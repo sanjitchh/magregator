@@ -47,11 +47,16 @@ resolve_gas_estimate_multiplier() {
 
 select_network() {
   echo "Choose network:"
-  select net in monad sepolia; do
+  select net in monad ethereum sepolia; do
     case "$net" in
       monad)
         PREFIX="MONAD"
         RPC_ALIAS="monad"
+        break
+        ;;
+      ethereum)
+        PREFIX="ETHEREUM"
+        RPC_ALIAS="ethereum"
         break
         ;;
       sepolia)

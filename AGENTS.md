@@ -22,8 +22,8 @@
 
 ## Operational context
 
-- Supported networks are currently Monad and Sepolia.
-- The interactive menu expects `.env` values like `MONAD_*` or `SEPOLIA_*`.
+- Supported networks are currently Ethereum mainnet, Monad, and Sepolia.
+- The interactive menu expects `.env` values like `ETHEREUM_*`, `MONAD_*`, or `SEPOLIA_*`.
 - Broadcasted interactive actions rely on `<PREFIX>_PK_DEPLOYER`.
 
 ## Documentation expectations

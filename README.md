@@ -4,12 +4,14 @@ Moksa Aggregator is a modular DEX-aggregation router with upgradeable router/ada
 
 ## Networks
 
+- Ethereum Mainnet (`chainId` 1)
 - Monad (`chainId` 143 / 10143)
 - Ethereum Sepolia (`chainId` 11155111)
 
 Network registry contracts:
 
 - `deployments/MonadDeployments.sol`
+- `deployments/EthereumDeployments.sol`
 - `deployments/SepoliaDeployments.sol`
 - `deployments/utils/DeploymentFactory.sol`
 
@@ -26,7 +28,7 @@ Network registry contracts:
 cp .env.sample .env
 ```
 
-Fill the environment variables for your target network (`MONAD_*` or `SEPOLIA_*`).
+Fill the environment variables for your target network (`ETHEREUM_*`, `MONAD_*`, or `SEPOLIA_*`).
 
 Required baseline values:
 
@@ -82,7 +84,7 @@ The menu is grouped to keep actions manageable:
 
 Typical flow:
 
-1. Choose network (`monad` or `sepolia`)
+1. Choose network (`monad`, `ethereum`, or `sepolia`)
 2. Choose action group
 3. Choose the specific action
 4. Confirm broadcast if the action mutates state
@@ -94,6 +96,8 @@ Uniswap v4 adapter deployments expect `<PREFIX>_UNIV4_STATIC_QUOTER` to point at
 Sushi v3 adapter deployments use the same pool-level static quoter flow as Uniswap v3 in this repo, so `<PREFIX>_SUSHIV3_QUOTER` should point at a deployed `UniswapV3StaticQuoter` rather than Sushi's official `QuoterV2`.
 
 Broadcasts on Monad default to `--gas-estimate-multiplier 200` because the RPC often underestimates gas for admin and sync transactions. Override this per network with `<PREFIX>_GAS_ESTIMATE_MULTIPLIER` in `.env` when needed.
+
+For Ethereum mainnet, the sample env now includes ready-to-fill deployment values for `UniswapV2`, `UniswapV3`, `SushiV3`, `PancakeV3`, `UniswapV4`, and `WNative`. Adapter proxy addresses still belong in `deployments/EthereumDeployments.sol` after deployment.
 
 Adapter upgrades in the interactive menu now live under `upgrade -> adapters` and resolve the known proxy address from `deployments/*.sol`, just like router and fee vault upgrades. You do not need an `.env` entry for the proxy address unless you want to call the manual override entrypoint yourself.
 Example:
