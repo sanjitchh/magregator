@@ -21,6 +21,7 @@ interface IFeeVault {
     event UpdatedTokenApproval(address indexed _token, address indexed _spender, uint256 _amount);
     event ConversionBatchExecuted(uint256 _callCount, uint256 _usdcRecovered);
     event UsdcAllocated(uint256 _recoveryAmount, uint256 _developmentAmount, uint256 _postCapCompanyAmount, uint256 _protocolAmount);
+    event UsdcDistributionFailed(uint256 indexed _bucket, address indexed _to, uint256 _amount, bytes _reason);
     event RecoveryUsdcDistributed(address indexed _to, uint256 _amount);
     event DevelopmentUsdcDistributed(address indexed _to, uint256 _amount);
     event PostCapCompanyUsdcDistributed(address indexed _to, uint256 _amount);
