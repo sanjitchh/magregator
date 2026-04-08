@@ -164,6 +164,7 @@ Under `admin -> fee-vault` you can access:
 - `vault-set-router`
 - `vault-set-executor`
 - `vault-set-usdc`
+- `vault-migrate-usdc-accounting`
 - `vault-set-recovery-recipient`
 - `vault-set-recovery-cap-usdc`
 - `vault-set-development-recipient`
@@ -179,6 +180,7 @@ Under `admin -> fee-vault` you can access:
 These actions are backed by `script/admin/ManageFeeVault.s.sol`.
 
 Use `vault-allocate-and-distribute-usdc` when the fee vault already holds raw USDC and you want to allocate that balance into the configured buckets and distribute it in one transaction. `vault-distribute-pending-usdc` only sends amounts already recorded in the pending bucket state.
+`vault-set-usdc` is now limited to fresh vault state where pending buckets, current vault USDC balance, and accrued cap progress are all zero. Use `vault-migrate-usdc-accounting` for token-domain migrations that must preserve or rebase accrued/cap accounting.
 
 Under `admin -> sync-tools` you can access:
 
@@ -218,6 +220,17 @@ forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
   --broadcast
 
 forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
+  --sig "runMigrateUsdcAccounting(address,uint256,uint256,uint256,uint256)" \
+  0xYourNewUsdc \
+  50000000000 \
+  25000000000 \
+  25000000000 \
+  5000000000 \
+  --rpc-url monad \
+  --private-key "$MONAD_PK_DEPLOYER" \
+  --broadcast
+
+forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault \
   --sig "runSetAllowedSwapTarget(address,bool)" \
   0xYourSwapTarget \
   true \
@@ -248,6 +261,7 @@ Notes:
 - For native-entry swaps, retained fees are usually held as wrapped native in the router or fee vault.
 - Use `router-token-balance` to inspect fallback balances left in the router.
 - Use `vault-token-balance` to inspect tokens waiting for conversion inside the fee vault.
+- Safe USDC migration sequence: first `vault-allocate-and-distribute-usdc`, then `vault-distribute-pending-usdc` until pending balances are zero, and only then call `vault-migrate-usdc-accounting`.
 
 ### Fee flow
 
