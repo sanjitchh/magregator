@@ -11,6 +11,7 @@ contract MonadDeployments is INetworkDeployments {
     address constant ROUTER = 0x09e5c9eE065978F6a9a2F07CF8aAf2B449D3318e;
     // Current FeeVault implementation after Monad deploy: 0x0468c436055eD301f227178e17d2a084Ba526E1b.
     address constant FEE_VAULT = 0x2cb1247AF8313e36FA6ee071B1Ec815d5d4ce904;
+    address constant STAKING = address(0);
     address constant UNISWAP_V2_ADAPTER = address(0);
     // Current UniswapV3 implementation after Monad redeploy: 0x4433CDF3275f6C557c4969bD325729ec3563Ed68.
     address constant UNISWAP_V3_ADAPTER = 0xbCC54C8Ca1363C004A80944ff0aEf0d3356E0efC;
@@ -38,6 +39,10 @@ contract MonadDeployments is INetworkDeployments {
 
     function getFeeVault() public pure override returns (address) {
         return FEE_VAULT;
+    }
+
+    function getStaking() public pure override returns (address) {
+        return STAKING;
     }
 
     function getUniswapV2Adapter() public pure override returns (address) {

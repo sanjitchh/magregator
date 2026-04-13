@@ -47,6 +47,8 @@ Use one network-agnostic deployment script:
 Available entrypoints:
 
 - `runRouter(string)`
+- `runStaking(string)`
+- `DeployMockERC20.run(string,string,uint8,address,address,uint256)`
 - `runUniswapV2(string)`
 - `runUniswapV3(string)`
 - `runSushiV3(string)`
@@ -77,8 +79,8 @@ Use the interactive wrapper for deployments, upgrades, admin changes, and read-o
 
 The menu is grouped to keep actions manageable:
 
-- `deploy` - deploy router, fee vault, the V3/V4 static quoters, and adapters through a dedicated `adapters` submenu
-- `upgrade` - upgrade existing router, fee vault, and adapter proxy contracts through a dedicated `adapters` submenu
+- `deploy` - deploy router, fee vault, staking, mock ERC20s, the V3/V4 static quoters, and adapters through a dedicated `adapters` submenu
+- `upgrade` - upgrade existing router, fee vault, staking, and adapter proxy contracts through a dedicated `adapters` submenu
 - `admin` - apply on-chain config changes
 - `inspect` - run read-only checks
 
@@ -128,6 +130,12 @@ Fresh fee vault deployments also pick up optional treasury settings from `.env` 
 - `<PREFIX>_PROTOCOL_RECIPIENT`
 - `<PREFIX>_POST_CAP_COMPANY_BPS`
 
+Fresh staking deployments require these keys:
+
+- `<PREFIX>_STAKING_TOKEN`
+- `<PREFIX>_STAKING_REWARD_TOKEN` (use the same token address as `<PREFIX>_STAKING_TOKEN` for the current staking model)
+- `<PREFIX>_STAKING_UNBONDING_PERIOD`
+
 For V3-style adapters, the interactive menu also includes `admin -> sync-tools -> enable-uniswapv3-fees`, `enable-sushiv3-fees`, and `enable-pancakev3-fees` to seed the default fee tiers on an already-deployed adapter. Fresh V3 adapter deployments now fall back to built-in default fee tiers when the corresponding `.env` array is not set.
 
 `RECOVERY_CAP_USDC` and `DEVELOPMENT_CAP_USDC` use raw USDC base units. With 6-decimal USDC, `50,000 USDC` should be set as `50000000000`.
@@ -136,7 +144,7 @@ That means new router and fee vault deployments can come up preconfigured withou
 
 ### Router fee management
 
-The interactive script now groups `admin` actions into smaller submenus: `router-fees`, `fee-vault`, and `sync-tools`.
+The interactive script now groups `admin` actions into smaller submenus: `router-fees`, `fee-vault`, `staking`, `mock-token`, and `sync-tools`.
 
 Under `admin -> router-fees` you can access:
 
@@ -177,6 +185,56 @@ Under `admin -> fee-vault` you can access:
 - `vault-distribute-pending-usdc`
 
 These actions are backed by `script/admin/ManageFeeVault.s.sol`.
+
+### Staking management
+
+Under `admin -> staking` you can access:
+
+- `status`
+- `token-balance`
+- `set-unbonding-period`
+- `deposit-rewards`
+- `set-annual-emission`
+- `recover-excess-token`
+
+These actions are backed by `script/admin/ManageStaking.s.sol`.
+
+### Mock token deploy and mint
+
+For Sepolia testing you can deploy simple owner-mintable ERC20s from the interactive menu:
+
+- `deploy -> mockerc20`
+- `admin -> mock-token -> mint`
+
+`deploy -> mockerc20` will ask for:
+
+- token name
+- token symbol
+- token decimals
+- owner address
+- initial recipient address
+- initial mint amount in base units
+
+The owner can later mint more supply through `admin -> mock-token -> mint`.
+
+## Staking contract
+
+`MoksaStaking` is a standalone upgradeable staking pool aligned to the annual-emission formula in the staking product spec.
+
+- Users stake `STAKING_TOKEN` into a single pool.
+- The recommended setup is to use the same token for staking and rewards.
+- Maintainers deposit reward inventory with `depositRewards(amount)`.
+- Maintainers set yearly reward output with `setAnnualEmission(amount)`.
+- Rewards accrue continuously over time from the configured annual emission.
+- User rewards follow `your active stake / total active stake * annual emission`, scaled by elapsed time.
+- Users can claim rewards at any time.
+- `requestUnstake(amount)` removes the amount from active stake immediately.
+- Unbonding amounts do not earn rewards.
+- Each unstake request gets its own queue entry with `amount`, `requestTime`, `unlockTime`, and `withdrawn` status.
+- Users withdraw matured requests later with `withdrawUnbonded(...)`.
+- The contract rejects annual emission settings that are underfunded by current deposited rewards.
+
+For safety, the staking contract does not expose unrestricted token rescue. `recover-excess-token` only allows recovering ERC20 balances above tracked staking and reward liabilities.
 
 Use `vault-allocate-and-distribute-usdc` when the fee vault already holds raw USDC and you want to allocate that balance into the configured buckets and distribute it in one transaction. `vault-distribute-pending-usdc` only sends amounts already recorded in the pending bucket state.
 
@@ -300,6 +358,7 @@ forge script script/admin/UpgradeRouter.s.sol --rpc-url sepolia --broadcast
 forge script script/admin/UpgradeFeeVault.s.sol --rpc-url sepolia --broadcast
 forge script script/admin/ManageRouterFees.s.sol:ManageRouterFees --sig "runStatus()" --rpc-url sepolia
 forge script script/admin/ManageFeeVault.s.sol:ManageFeeVault --sig "runStatus()" --rpc-url sepolia
+forge script script/admin/ManageStaking.s.sol:ManageStaking --sig "runStatus()" --rpc-url sepolia
 forge script script/admin/UpdateAdapters.s.sol --account deployer --rpc-url sepolia --broadcast
 forge script script/admin/UpdateHopTokens.s.sol --account deployer --rpc-url sepolia --broadcast
 forge script script/admin/ManageUniswapV4Pools.s.sol --account deployer --rpc-url sepolia --broadcast

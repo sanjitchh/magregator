@@ -10,6 +10,7 @@ contract SepoliaDeployments is INetworkDeployments {
     // Fill these addresses after deploying upgradeable router and adapters on Sepolia.
     address constant ROUTER = 0x009B03c9DCc4B54022188207ca17fF3303D6055F;
     address constant FEE_VAULT = 0x0E0BCF47459958625B49d4a6daD03301A6480BB5;
+    address constant STAKING = 0x5aD4055425dAe699B601ee563c0624bb080f3fb3;
     address constant UNISWAP_V2_ADAPTER = address(0);
     // Current UniswapV3 implementation after Sepolia upgrade: 0xc4446028922a1b612a009DFA258eD309438dfcc5.
     address constant UNISWAP_V3_ADAPTER = 0x7caF364caA220D606cd68Ca9960DE4e05cb27158;
@@ -34,6 +35,10 @@ contract SepoliaDeployments is INetworkDeployments {
 
     function getFeeVault() public pure override returns (address) {
         return FEE_VAULT;
+    }
+
+    function getStaking() public pure override returns (address) {
+        return STAKING;
     }
 
     function getUniswapV2Adapter() public pure override returns (address) {

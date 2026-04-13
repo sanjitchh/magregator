@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "../../src/MoksaRouter.sol";
 import "../../src/FeeVault.sol";
+import "../../src/MoksaStaking.sol";
 import "../../src/adapters/UniswapV2Adapter.sol";
 import "../../src/adapters/UniswapV3Adapter.sol";
 import "../../src/adapters/SushiV3Adapter.sol";
@@ -67,6 +68,27 @@ contract DeployUpgradeable is Script {
 
         console.log("FeeVault implementation:", implementation);
         console.log("FeeVault proxy:", proxy);
+
+        vm.stopBroadcast();
+    }
+
+    function runStaking(string calldata prefix) external {
+        vm.startBroadcast();
+
+        address implementation = address(new MoksaStaking());
+        bytes memory initData = abi.encodeCall(
+            MoksaStaking.initialize,
+            (
+                vm.envAddress(_key(prefix, "STAKING_TOKEN")),
+                vm.envAddress(_key(prefix, "STAKING_REWARD_TOKEN")),
+                vm.envUint(_key(prefix, "STAKING_UNBONDING_PERIOD")),
+                vm.envAddress(_key(prefix, "INITIAL_MAINTAINER"))
+            )
+        );
+        address proxy = _deployProxy(implementation, initData);
+
+        console.log("MoksaStaking implementation:", implementation);
+        console.log("MoksaStaking proxy:", proxy);
 
         vm.stopBroadcast();
     }

@@ -83,6 +83,13 @@ prompt_uint() {
   printf '%s' "$value"
 }
 
+prompt_string() {
+  local prompt="$1"
+  local value
+  read -r -p "$prompt: " value
+  printf '%s' "$value"
+}
+
 prompt_token_address() {
   prompt_address 'Token address'
 }
@@ -158,7 +165,7 @@ select_group() {
 select_deploy_action() {
   while true; do
     echo "Choose deploy action:"
-    select c in router feevault adapters v3staticquoter v4staticquoter back; do
+    select c in router feevault staking mockerc20 adapters v3staticquoter v4staticquoter back; do
       case "$c" in
         router)
           reset_action_config
@@ -176,6 +183,31 @@ select_deploy_action() {
           SIG='runFeeVault(string)'
           NEEDS_PREFIX=1
           MUTATES_STATE=1
+          return 0
+          ;;
+        staking)
+          reset_action_config
+          ACTION_LABEL='deploy staking'
+          SCRIPT_TARGET='script/deploy/DeployUpgradeable.s.sol:DeployUpgradeable'
+          SIG='runStaking(string)'
+          NEEDS_PREFIX=1
+          MUTATES_STATE=1
+          return 0
+          ;;
+        mockerc20)
+          reset_action_config
+          ACTION_LABEL='deploy mock erc20'
+          SCRIPT_TARGET='script/deploy/DeployMockERC20.s.sol:DeployMockERC20'
+          SIG='run(string,string,uint8,address,address,uint256)'
+          MUTATES_STATE=1
+          EXTRA_ARGS=(
+            "$(prompt_string 'Token name')"
+            "$(prompt_string 'Token symbol')"
+            "$(prompt_uint 'Token decimals')"
+            "$(prompt_address 'Owner address')"
+            "$(prompt_address 'Initial recipient address (zero for none)')"
+            "$(prompt_uint 'Initial mint amount in base units')"
+          )
           return 0
           ;;
         adapters)
@@ -298,7 +330,7 @@ select_deploy_adapter_action() {
 select_upgrade_action() {
   while true; do
     echo "Choose upgrade action:"
-    select c in router feevault adapters back; do
+    select c in router feevault staking adapters back; do
       case "$c" in
         router)
           reset_action_config
@@ -311,6 +343,13 @@ select_upgrade_action() {
           reset_action_config
           ACTION_LABEL='upgrade fee vault'
           SCRIPT_TARGET='script/admin/UpgradeFeeVault.s.sol:UpgradeFeeVault'
+          MUTATES_STATE=1
+          return 0
+          ;;
+        staking)
+          reset_action_config
+          ACTION_LABEL='upgrade staking'
+          SCRIPT_TARGET='script/admin/UpgradeStaking.s.sol:UpgradeStaking'
           MUTATES_STATE=1
           return 0
           ;;
@@ -733,10 +772,102 @@ select_admin_sync_action() {
   done
 }
 
+select_admin_mock_token_action() {
+  echo "Choose mock token admin action:"
+  select c in mint back; do
+    case "$c" in
+      mint)
+        reset_action_config
+        ACTION_LABEL='mint mock erc20'
+        SCRIPT_TARGET='script/admin/MintMockERC20.s.sol:MintMockERC20'
+        SIG='run(address,address,uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_address 'Mock token address')"
+          "$(prompt_address 'Recipient address')"
+          "$(prompt_uint 'Mint amount in base units')"
+        )
+        return 0
+        ;;
+      back)
+        return 1
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
+select_admin_staking_action() {
+  echo "Choose staking admin action:"
+  select c in status token-balance set-unbonding-period deposit-rewards set-annual-emission recover-excess-token back; do
+    case "$c" in
+      status)
+        reset_action_config
+        ACTION_LABEL='show staking settings'
+        SCRIPT_TARGET='script/admin/ManageStaking.s.sol:ManageStaking'
+        SIG='runStatus()'
+        return 0
+        ;;
+      token-balance)
+        reset_action_config
+        ACTION_LABEL='show staking token balance'
+        SCRIPT_TARGET='script/admin/ManageStaking.s.sol:ManageStaking'
+        SIG='runTokenBalance(address)'
+        EXTRA_ARGS=("$(prompt_token_address)")
+        return 0
+        ;;
+      set-unbonding-period)
+        reset_action_config
+        ACTION_LABEL='update staking unbonding period'
+        SCRIPT_TARGET='script/admin/ManageStaking.s.sol:ManageStaking'
+        SIG='runSetUnbondingPeriod(uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_uint 'New unbonding period in seconds')")
+        return 0
+        ;;
+      deposit-rewards)
+        reset_action_config
+        ACTION_LABEL='deposit staking rewards'
+        SCRIPT_TARGET='script/admin/ManageStaking.s.sol:ManageStaking'
+        SIG='runDepositRewards(uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_uint 'Reward amount in token base units')")
+        return 0
+        ;;
+      set-annual-emission)
+        reset_action_config
+        ACTION_LABEL='update staking annual emission'
+        SCRIPT_TARGET='script/admin/ManageStaking.s.sol:ManageStaking'
+        SIG='runSetAnnualEmission(uint256)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=("$(prompt_uint 'Annual emission in token base units')")
+        return 0
+        ;;
+      recover-excess-token)
+        reset_action_config
+        ACTION_LABEL='recover staking excess token'
+        SCRIPT_TARGET='script/admin/ManageStaking.s.sol:ManageStaking'
+        SIG='runRecoverExcessERC20(address,uint256,address)'
+        MUTATES_STATE=1
+        EXTRA_ARGS=(
+          "$(prompt_token_address)"
+          "$(prompt_uint 'Amount in token base units')"
+          "$(prompt_address 'Recipient address')"
+        )
+        return 0
+        ;;
+      back)
+        return 1
+        ;;
+      *) echo "Invalid option" ;;
+    esac
+  done
+}
+
 select_admin_action() {
   while true; do
     echo "Choose admin category:"
-    select c in router-fees fee-vault sync-tools back; do
+    select c in router-fees fee-vault staking mock-token sync-tools back; do
       case "$c" in
         router-fees)
           if select_admin_router_action; then
@@ -746,6 +877,18 @@ select_admin_action() {
           ;;
         fee-vault)
           if select_admin_vault_action; then
+            return
+          fi
+          break
+          ;;
+        staking)
+          if select_admin_staking_action; then
+            return
+          fi
+          break
+          ;;
+        mock-token)
+          if select_admin_mock_token_action; then
             return
           fi
           break

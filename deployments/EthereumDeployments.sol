@@ -11,6 +11,7 @@ contract EthereumDeployments is INetworkDeployments {
     // Current UniswapV3StaticQuoter deployment: 0xC05BE9059Ba251Ee7e2B68D652fF0AF3E3279817.
     address constant ROUTER = 0xEa8674550BbEDF3502C7C20206608a40647F7654;
     address constant FEE_VAULT = 0x8d3BAA635Ab51D9adD8Ef054cAF006deec5AA9E4;
+    address constant STAKING = address(0);
     address constant UNISWAP_V2_ADAPTER = address(0);
     address constant UNISWAP_V3_ADAPTER = address(0);
     address constant SUSHI_V3_ADAPTER = 0xBf029a16F231233ebD0325C40f25A60dFcc40E8a;
@@ -34,6 +35,10 @@ contract EthereumDeployments is INetworkDeployments {
 
     function getFeeVault() public pure override returns (address) {
         return FEE_VAULT;
+    }
+
+    function getStaking() public pure override returns (address) {
+        return STAKING;
     }
 
     function getUniswapV2Adapter() public pure override returns (address) {
