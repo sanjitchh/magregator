@@ -89,6 +89,37 @@ contract ManageFeeVault is Script {
         console.log("FeeVault USDC updated successfully");
     }
 
+    function runMigrateUsdcAccounting(
+        address usdc,
+        uint256 recoveryCapUsdc,
+        uint256 recoveryAccruedUsdc,
+        uint256 developmentCapUsdc,
+        uint256 developmentAccruedUsdc
+    ) external {
+        (INetworkDeployments deployments, FeeVault vault) = _vault();
+
+        console.log("Network:", deployments.getNetworkName());
+        console.log("FeeVault:", address(vault));
+        console.log("Current USDC:", vault.USDC());
+        console.log("New USDC:", usdc);
+        console.log("Current recovery cap USDC:", vault.RECOVERY_CAP_USDC());
+        console.log("New recovery cap USDC:", recoveryCapUsdc);
+        console.log("Current recovery accrued USDC:", vault.recoveryAccruedUsdc());
+        console.log("New recovery accrued USDC:", recoveryAccruedUsdc);
+        console.log("Current development cap USDC:", vault.DEVELOPMENT_CAP_USDC());
+        console.log("New development cap USDC:", developmentCapUsdc);
+        console.log("Current development accrued USDC:", vault.developmentAccruedUsdc());
+        console.log("New development accrued USDC:", developmentAccruedUsdc);
+
+        vm.startBroadcast();
+        vault.migrateUsdcAccounting(
+            usdc, recoveryCapUsdc, recoveryAccruedUsdc, developmentCapUsdc, developmentAccruedUsdc
+        );
+        vm.stopBroadcast();
+
+        console.log("FeeVault USDC accounting migrated successfully");
+    }
+
     function runSetRecoveryRecipient(address recoveryRecipient) external {
         (INetworkDeployments deployments, FeeVault vault) = _vault();
 

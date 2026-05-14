@@ -82,8 +82,51 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
 
     function setUsdc(address _usdc) external override onlyMaintainer {
         require(_usdc != address(0), "FeeVault: Invalid USDC");
-        emit UpdatedUsdc(USDC, _usdc);
-        USDC = _usdc;
+        _requireUsdcMigrationSettled();
+        require(recoveryAccruedUsdc == 0 && developmentAccruedUsdc == 0, "FeeVault: Use migration for accrued state");
+
+        _setUsdc(_usdc);
+    }
+
+    function migrateUsdcAccounting(
+        address _usdc,
+        uint256 _recoveryCapUsdc,
+        uint256 _recoveryAccruedUsdc,
+        uint256 _developmentCapUsdc,
+        uint256 _developmentAccruedUsdc
+    ) external override onlyMaintainer {
+        require(_usdc != address(0), "FeeVault: Invalid USDC");
+        require(_recoveryAccruedUsdc <= _recoveryCapUsdc, "FeeVault: Recovery accrued exceeds cap");
+        require(_developmentAccruedUsdc <= _developmentCapUsdc, "FeeVault: Development accrued exceeds cap");
+
+        _requireUsdcMigrationSettled();
+
+        address oldUsdc = USDC;
+        uint256 oldRecoveryCapUsdc = RECOVERY_CAP_USDC;
+        uint256 oldDevelopmentCapUsdc = DEVELOPMENT_CAP_USDC;
+
+        _setUsdc(_usdc);
+
+        if (oldRecoveryCapUsdc != _recoveryCapUsdc) {
+            emit UpdatedRecoveryCapUsdc(oldRecoveryCapUsdc, _recoveryCapUsdc);
+        }
+        if (oldDevelopmentCapUsdc != _developmentCapUsdc) {
+            emit UpdatedDevelopmentCapUsdc(oldDevelopmentCapUsdc, _developmentCapUsdc);
+        }
+
+        RECOVERY_CAP_USDC = _recoveryCapUsdc;
+        recoveryAccruedUsdc = _recoveryAccruedUsdc;
+        DEVELOPMENT_CAP_USDC = _developmentCapUsdc;
+        developmentAccruedUsdc = _developmentAccruedUsdc;
+
+        emit UsdcMigrationConfigured(
+            oldUsdc,
+            _usdc,
+            _recoveryCapUsdc,
+            _recoveryAccruedUsdc,
+            _developmentCapUsdc,
+            _developmentAccruedUsdc
+        );
     }
 
     function setRecoveryRecipient(address _recoveryRecipient) external override onlyMaintainer {
@@ -272,6 +315,16 @@ contract FeeVault is Initializable, UUPSUpgradeable, Maintainable, IFeeVault {
         }
 
         token.safeApprove(_spender, _amount);
+    }
+
+    function _setUsdc(address _usdc) internal {
+        emit UpdatedUsdc(USDC, _usdc);
+        USDC = _usdc;
+    }
+
+    function _requireUsdcMigrationSettled() internal view {
+        require(_pendingUsdcTotal() == 0, "FeeVault: Pending USDC not settled");
+        require(IERC20(USDC).balanceOf(address(this)) == 0, "FeeVault: Old USDC balance not settled");
     }
 
     function _isExecutorOrMaintainer(address _account) internal view returns (bool) {
